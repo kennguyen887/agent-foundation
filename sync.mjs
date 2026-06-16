@@ -145,7 +145,10 @@ function isGsdManaged(relPath, gsdPaths) {
 // Vendor authored capabilities (skills / agents / hooks).
 // ---------------------------------------------------------------------------
 
+const SKIP_DIRS = new Set([".git", "node_modules", ".DS_Store"]);
+
 function copyTree(srcPath, destRel) {
+  if (SKIP_DIRS.has(path.basename(srcPath))) return;
   const stat = fs.statSync(srcPath);
   if (stat.isDirectory()) {
     for (const entry of fs.readdirSync(srcPath)) {

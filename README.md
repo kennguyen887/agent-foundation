@@ -2,21 +2,29 @@
 
 Everything that boosts an AI coding agent — **rules, hooks, skills, MCP, and tools** — exported from a working setup and sanitized for open source.
 
-The source of truth is a Claude Code config (`~/.claude`), but the layout here is intentionally agent-agnostic: rules are plain Markdown, hooks are plain scripts, skills are portable folders, and MCP server definitions are standard JSON. Adopt the whole thing or cherry-pick a piece.
+This is meant to serve **any** AI coding agent, not one in particular. Portable capabilities live at the top level (plain-Markdown rules, portable skill folders, standard MCP JSON). Anything that only works with a specific agent lives in its own namespaced directory — today that's `claude/` (Claude Code). Other agents get sibling dirs (`cursor/`, `codex/`, …) as they're added. Adopt the whole thing or cherry-pick a piece.
 
 ## Layout
 
+**Portable (any agent):**
+
 | Path | What it is |
 |---|---|
-| `rules/CLAUDE.md` | Global engineering rules (workflow, release safety, code style, testing). Sanitized. |
-| `skills/` | Authored, reusable skills (portable folders with a `SKILL.md`). |
-| `hooks/` | Authored hook scripts. |
-| `settings/settings.json` | Settings template — absolute paths replaced with `${HOME}`, node path normalized. |
-| `mcp/servers.json` | MCP server definitions. Secret env values are `${PLACEHOLDER}` refs. |
+| `rules/coding-guidelines.md` | Engineering rules (workflow, release safety, code style, testing). Sanitized, agent-neutral. |
+| `skills/` | Reusable skills (portable folders with a `SKILL.md`). |
+| `mcp/servers.json` | MCP server definitions (open standard). Secret env values are `${PLACEHOLDER}` refs. |
 | `.env.example` | The secrets `mcp/servers.json` expects. Copy to `.env` and fill in. |
-| `plugins/manifest.json` | **Reference only** — third-party plugins/marketplaces + versions. Their source is *not* vendored. |
-| `bootstrap.sh` | Reproduce the setup on a fresh machine (rules, settings, skills, plugins). |
-| `sync.mjs` | The exporter. Re-run to refresh the repo from your live config. |
+
+**`claude/` — Claude Code-specific:**
+
+| Path | What it is |
+|---|---|
+| `claude/settings.json` | Settings template — absolute paths → `${HOME}`, node path normalized. |
+| `claude/hooks/` | Hook scripts (Claude Code hook format). |
+| `claude/plugins.json` | **Reference only** — third-party plugins/marketplaces + versions. Source is *not* vendored. |
+| `claude/bootstrap.sh` | Reproduce the Claude Code setup on a fresh machine. |
+
+`sync.mjs` — the exporter. Re-run to refresh the repo from your live config (currently sources `~/.claude`).
 
 ## Why plugins aren't vendored
 
@@ -25,8 +33,8 @@ Most installed capabilities (the `gsd-*` skills/agents/hooks from get-shit-done,
 ## Using it
 
 ```bash
-# Reproduce the setup on a new machine
-./bootstrap.sh
+# Reproduce the Claude Code setup on a new machine
+./claude/bootstrap.sh
 
 # MCP secrets
 cp .env.example .env   # then fill in SENTRY_ACCESS_TOKEN, LINEAR_API_KEY, ...

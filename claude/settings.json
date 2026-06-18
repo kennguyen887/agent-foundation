@@ -1,8 +1,4 @@
 {
-  "env": {
-    "ECC_GATEGUARD": "off",
-    "ECC_CONTEXT_MONITOR_COST_WARNINGS": "off"
-  },
   "permissions": {
     "allow": [
       "mcp__codegraph__codegraph_search",
@@ -20,100 +16,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"node\" \"${HOME}/.claude/hooks/gsd-check-update.js\""
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${HOME}/.claude/hooks/gsd-session-state.sh\""
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "bash \"${HOME}/.claude/hooks/list-project-skills.sh\""
           }
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash|Edit|Write|MultiEdit|Agent|Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"node\" \"${HOME}/.claude/hooks/gsd-context-monitor.js\"",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"node\" \"${HOME}/.claude/hooks/gsd-read-injection-scanner.js\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${HOME}/.claude/hooks/gsd-phase-boundary.sh\"",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"node\" \"${HOME}/.claude/hooks/gsd-prompt-guard.js\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"node\" \"${HOME}/.claude/hooks/gsd-read-guard.js\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"node\" \"${HOME}/.claude/hooks/gsd-workflow-guard.js\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${HOME}/.claude/hooks/gsd-validate-commit.sh\"",
-            "timeout": 5
-          }
-        ]
-      },
       {
         "matcher": "Write",
         "hooks": [
@@ -126,14 +34,8 @@
       }
     ]
   },
-  "statusLine": {
-    "type": "command",
-    "command": "node \"${HOME}/.claude/hooks/gsd-statusline.js\""
-  },
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
-    "ecc@ecc": true,
-    "compound-engineering@compound-engineering-plugin": true,
     "warp@claude-code-warp": true
   },
   "extraKnownMarketplaces": {

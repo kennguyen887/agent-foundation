@@ -26,8 +26,6 @@ claude plugin marketplace add "warpdotdev/claude-code-warp"   # claude-code-warp
 
 echo "==> Installing plugins"
 claude plugin install "superpowers@claude-plugins-official"
-claude plugin install "ecc@ecc"
-claude plugin install "compound-engineering@compound-engineering-plugin"
 claude plugin install "warp@claude-code-warp"
 
 echo "==> MCP servers: copy mcp/servers.json into your client and supply env vars"

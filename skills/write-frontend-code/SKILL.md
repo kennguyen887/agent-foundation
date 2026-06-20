@@ -186,6 +186,48 @@ A localization context + locale JSON with **dot-notation namespaces** (`common.t
   can't render server-side.
 - **Hard navigation** (`window.location`) for unrecoverable/auth/maintenance states; **router push** for in-app nav.
 
+## 12. Error handling & user feedback
+A layered stack, not try/catch sprinkled everywhere:
+- **Global HTTP interceptor** (in `BaseHttp`, §2) maps transport errors centrally: 401 → queued
+  refresh + retry; 403 → access message; 503/maintenance → redirect; otherwise → a normalized `Error`
+  with `.response` for callers.
+- **A class `ErrorBoundary`** catches render-time errors and shows a fallback per route/region.
+- **Alerts/toasts via context**, not per-component state: an `AlertContext` keyed by group id
+  (`openAlert('listing-form', { type: 'error', content })`) + a toast/notification util for transient
+  messages. A shared `handleError(e)` turns a caught error into a user-facing dialog (and logs out on
+  auth-invalidation).
+- **Form errors** surface from `formState.errors` via the shared `Field` components (§5).
+▸ *Other stacks:* one global request-error handler + an error boundary + a toast/alert channel — don't
+re-handle the same statuses at every call site. (Auth/session flow: `secure-a-frontend-app`.)
+
+## 13. Realtime (sockets)
+- **One socket client (singleton) owns the lifecycle**, not per-component connections:
+  ```ts
+  class SocketClient {
+    private socket?: Socket;
+    init(role: string) {
+      this.socket = io(Config.SOCKET_URL, { auth: { token: BaseHttp.accessToken },
+        query: { role }, transports: ['websocket'] });
+      this.socket.on('connect', onConnect); this.socket.on('exception', handleError);
+    }
+    emit(a, p, cb?) { this.socket?.emit(a, p, cb); }
+    on(a, cb) { this.socket?.on(a, cb); }  off(a, cb) { this.socket?.off(a, cb); }
+    disconnect() { this.socket?.removeAllListeners(); this.socket?.disconnect(); }
+  }
+  ```
+- **Init after auth** (token available); **remove listeners in the `useEffect` cleanup** and disconnect
+  on logout. Event names live in an enum; wrap a domain event stream in a context.
+▸ *Other stacks:* a single connection manager + per-effect subscribe/unsubscribe; never leak listeners.
+
+## 14. Providers & app-init
+- **Flatten the `_app` provider nest** with a `combineProviders([A, B, C])` helper instead of deep JSX:
+  ```ts
+  const Providers = combineProviders([SessionProvider, QueryProvider, AuthProvider, AlertProvider, OrgProvider]);
+  ```
+- **Init app-wide side-effects once** on mount in a `useConfigs`-style hook: logging + a push provider
+  (e.g. OneSignal) — `init()` → tag the user (`orgId`/`role` from session/config) → **clean up on
+  unmount** (`logout`). Never hard-code ids.
+
 ## Verification
 - Server data: a `queries/<feature>` hook (key factory + `useQuery`); writes via `.mutations.ts` that
   `invalidateQueries` the right key; no raw `fetch`/axios in components.
@@ -194,7 +236,10 @@ A localization context + locale JSON with **dot-notation namespaces** (`common.t
 - Styling uses theme tokens + `classnames` + `*.module.scss`; no hard-coded hex.
 - Heavy client-only modules are `next/dynamic({ ssr: false })`; browser APIs are `typeof window` guarded.
 - No scattered `process.env` (all via the Config module).
+- Transport errors handled once in the HTTP interceptor + an ErrorBoundary + a toast/alert channel — not per call site.
+- One socket client owns connect/auth/cleanup; listeners removed in effect cleanup.
 
 ## Related
+- `secure-a-frontend-app` — auth/session, route guards, secrets. · `handle-files-frontend` — CSV/PDF/upload/download.
 - `structure-a-frontend-app` — where these files live.
 - `write-frontend-tests` · `code-conventions` · `write-service-code` (backend equivalent).

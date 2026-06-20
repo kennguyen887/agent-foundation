@@ -1,7 +1,8 @@
 ---
 name: database-migrations
 description: Use when adding or changing a DB migration or schema, running migrations, or debugging null/missing response fields after a migration — the migration rules (additive, reversible, immutable, seed-vs-migration, push filters into SQL) and the "null fields = unapplied migration" gotcha.
-author: Ken Nguyễn <ntnpro@gmail.com>
+metadata:
+  author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
 # Database & migrations

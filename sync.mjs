@@ -67,6 +67,10 @@ const COMMUNITY_HINTS = new Set([
   "caveman", "git-guardrails-claude-code", "grill-with-docs",
   "improve-codebase-architecture", "setup-matt-pocock-skills", "setup-pre-commit",
   "stop-slop", "to-issues", "zoom-out",
+  // Matt Pocock skills (github.com/mattpocock/skills) — installed locally, not authored here.
+  "ask-matt", "codebase-design", "diagnosing-bugs", "domain-modeling", "prototype",
+  "to-prd", "triage", "tdd", "grill-me", "handoff", "teach", "grilling",
+  "migrate-to-shoehorn", "scaffold-exercises", "writing-great-skills",
 ]);
 
 // Text extensions get sanitized; anything else is copied byte-for-byte.

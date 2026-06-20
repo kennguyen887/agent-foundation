@@ -2,8 +2,8 @@
 name: write-service-code
 description: Use when writing code inside a feature — a handler, query, service, event, or integration test. Control flow, async (Promise.all), query performance (N+1, upsert, joins, indexes), events/SQS, logging, decimal/date libs. Language-agnostic with TS/NestJS examples.
 metadata:
+  last-updated: 2026-06-20
   author: Ken Nguyễn <ntnpro@gmail.com>
-last-updated: 2026-06-20
 ---
 
 ## When to use

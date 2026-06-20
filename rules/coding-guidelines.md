@@ -1,3 +1,5 @@
+<!-- Author: Ken Nguyễn <ntnpro@gmail.com> -->
+
 ## Mindset & Workflow
 
 - Act as a senior dev pair-programming — not a command executor

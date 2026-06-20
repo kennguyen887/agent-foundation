@@ -101,8 +101,8 @@ modules/<feature>/
 ├── queries/                   # ONE read use-case per file  (get-listing-list.ts)
 ├── events/                    # domain events + their handlers (*.event.ts)
 ├── dto/
-│   ├── inputs/                # request DTOs   (see step 4)
-│   └── responses/             # response DTOs  (see step 4)
+│   ├── inputs/                # request DTOs + index.ts barrel   (see step 4)
+│   └── responses/             # response DTOs + index.ts barrel  (see step 4)
 └── utils/                     # feature-only helpers (*.util.ts)
 ```
 
@@ -140,6 +140,11 @@ DTOs are the typed contract at the boundary; requests and responses never share 
 
 - **`dto/inputs/` vs `dto/responses/`.** Inputs validate incoming data; responses shape what goes
   out (and hide internal fields).
+- **Every `inputs/` and `responses/` folder has an `index.ts` barrel** re-exporting its DTOs, so
+  consumers import in **one line**, not one per file:
+  `import { CreateListingRequestDto, GetListingQueryDto } from '../dto/inputs';`. When you add a DTO,
+  add its `export * from './x.dto';` to that folder's `index.ts`. ▸ *Other stacks:* the package's
+  re-export file (`__init__.py`, `mod.rs`, a package index).
 - **Naming encodes direction & cardinality.** ▸ *Example:* inputs `Create<Entity>RequestDto`,
   `Update<Entity>RequestDto`, `Get<Entity>QueryDto`; responses `<Entity>ResDto`,
   `<Entity>ListResDto`. List responses extend a shared pagination-response base.

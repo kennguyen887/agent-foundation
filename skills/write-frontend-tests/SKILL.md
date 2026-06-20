@@ -1,6 +1,7 @@
 ---
 name: write-frontend-tests
 description: Use when writing frontend tests — Jest + React Testing Library for units (utils, hooks, components) and Cypress + Cucumber for e2e user flows. Where tests live, what to test, mocking the router, and the lint/type/test gates. React/Next.js reference.
+author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
 # Write frontend tests

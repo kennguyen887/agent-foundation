@@ -1,6 +1,7 @@
 ---
 name: git-flow
 description: Use when branching, opening an MR, cutting a release, or shipping a hotfix — the develop→staging→master branching & release flow, tagging, semantic versioning, hotfix path. Tool-agnostic (plain git).
+author: Ken Nguyễn <ntnpro@gmail.com>
 last-updated: 2026-06-20
 ---
 

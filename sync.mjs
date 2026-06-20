@@ -174,6 +174,11 @@ function vendorCapabilities(gsdPaths) {
         report.referenced.push(`${rel} (get-shit-done)`);
         continue;
       }
+      // Community downloads (not authored here) are referenced, never republished here.
+      if (dir === "skills" && COMMUNITY_HINTS.has(entry)) {
+        report.referenced.push(`${rel} (community download — not vendored)`);
+        continue;
+      }
       // skills are portable -> root; hooks/agents are Claude Code-specific -> claude/.
       const destRel = dir === "skills" ? rel : `claude/${dir}/${entry}`;
       const tag = COMMUNITY_HINTS.has(entry) ? "⚠ community — review before publish" : "authored";

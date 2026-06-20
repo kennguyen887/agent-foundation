@@ -1,6 +1,7 @@
 ---
 name: write-frontend-code
 description: Use when writing FE code inside a feature — data fetching (React Query), API service layer + DTOs, client/server state (Zustand + Context), forms (RHF + schema), styling (Tailwind + CSS Modules + tokens), custom hooks, typed config, i18n, SSR/hydration guards. React/Next.js reference, framework-flexible.
+author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
 # Write frontend code

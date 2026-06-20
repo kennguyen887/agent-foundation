@@ -1,6 +1,6 @@
 ---
 name: write-service-code
-description: Use when writing or reviewing the code INSIDE a feature — a controller, command/query handler, service, event handler, repository query, or test. Covers control flow (return early, pipelines over loops), parallel async (Promise.all), nullability (null over undefined), private-method placement, query performance (avoid N+1, upsert, select only needed fields, single round-trip, joins, indexes & ordering), event/SQS organization, structured logging, and how to write a test. Language-agnostic principles with an illustrative TypeScript/NestJS reference.
+description: Use when writing code inside a feature — a handler, query, service, event, or integration test. Control flow, async (Promise.all), query performance (N+1, upsert, joins, indexes), events/SQS, logging, decimal/date libs. Language-agnostic with TS/NestJS examples.
 last-updated: 2026-06-20
 ---
 

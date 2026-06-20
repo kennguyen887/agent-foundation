@@ -1,6 +1,6 @@
 ---
 name: write-unit-tests
-description: Use when writing isolated unit tests (mocked dependencies, no real DB) for CQRS command/query/event handlers, services, or request DTOs — adding coverage, creating a spec, or bootstrapping unit-test infrastructure in a new service. Covers the test/unit layout, jest projects, shared mock factories + a handler testing-module helper, the three test patterns, entity builders, jest.mock patterns, assertions, and cleanup. TypeScript/NestJS reference with portable principles.
+description: Use when writing isolated unit tests (mocked deps, no DB) for CQRS handlers, services, or DTOs. Mock factories, a handler testing-module helper, DTO validation, the AAA pattern, entity builders. TS/NestJS/Jest examples.
 last-updated: 2026-06-20
 ---
 
@@ -339,5 +339,5 @@ jest.mock('../../../../src/shared/utils', () => ({ ...jest.requireActual('../../
 - [structure-a-backend-service](./structure-a-backend-service.md) — module/handler/DTO layout the
   specs mirror.
 - [code-conventions](./code-conventions.md) — AAA, faker, `it.each`, matchers.
-- `rules/coding-guidelines.md` — *Testing Rules / HTTP-layer testing rule* (when a repo is
+- `CLAUDE.md` — *Testing Rules / HTTP-layer testing rule* (when a repo is
   integration-only and skips the unit layer).

@@ -263,6 +263,39 @@ describe('ListingCmdController', () => {
 - **Don't write isolated unit tests that bypass the boundary** — if it can't be reached through the
   boundary, skip it (global *HTTP-layer testing rule*).
 
+### 9. Robustness — transactions, event-handler safety, external clients
+- **Multi-repo writes go in one transaction; broadcast a compensating event before re-throwing.** Wrap
+  related mutations in `dataSource.transaction(em => …)` and pass `em` to each repo op for atomicity.
+  In an event-driven flow, if the transaction fails after side effects were signalled, emit a
+  **compensating event** (e.g. `OrderCanceled` releasing held inventory) before throwing, so
+  downstream can undo:
+  ```ts
+  await dataSource.transaction(async (em) => {
+    const order = await saveOrder(em, dto);
+    try { await reserveInventory(em, order); await debitWallet(em, order); return order; }
+    catch (e) { await events.publish(new OrderCanceledEvent(order)); throw e; }  // compensate, then roll back
+  });
+  ```
+- **In-process event handlers must not crash the bus.** A CQRS `@EventsHandler` is fire-and-forget;
+  one failing handler (missing template, third-party down) shouldn't break sibling handlers. Wrap
+  `handle` so it logs + swallows instead of throwing — e.g. a shared `@CatchException()` decorator
+  (log + return). (This is the in-process twin of the SQS "don't throw" rule in §6.)
+- **External/microservice clients own their lifecycle.** A `ClientProxy` (TCP/microservice client)
+  **closes on `OnApplicationShutdown`** (no zombie connections on deploy); retry config (attempts +
+  delay) is **env-driven**; route every call through one base `send()` wrapper that centralizes
+  retries + error mapping (don't scatter `clientProxy.send` across services).
+  ```ts
+  @Injectable() export class WalletClient implements OnApplicationShutdown {
+    constructor(@Inject(walletMs) private readonly proxy: ClientProxy) {}
+    onApplicationShutdown() { this.proxy.close(); }
+    send<I, R>(pattern: string, data: I) { return this.base.sendAsync<I, R>(this.proxy, pattern, data); }
+  }
+  ```
+- **Background jobs & caching** (Bull queues, Redis cache) have their own skill —
+  see `background-jobs-and-caching`.
+▸ *Other stacks:* a DB transaction + outbox/compensation; a global error-swallowing wrapper on async
+event handlers; one connection-managed client per dependency with retries centralized.
+
 ## Verification
 
 Reviewing a change, confirm:

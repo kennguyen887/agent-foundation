@@ -174,75 +174,7 @@ Run the project's gates (typecheck / lint / build / tests) and state the result.
 
 ## Release Safety Rules
 
-### 1. Backend Backward Compatibility
-
-Every backend release MUST be compatible with both the current production app version and the new app version. There is always a gap between backend deployment and app rollout — the current app must keep working during that gap.
-
-**Database changes:**
-- Only additive migrations per release (add columns, add tables)
-- NEVER rename or drop columns in the same release as the feature using them
-- Sequence: add column → update reads/writes → remove old column in a later release
-
-**API changes:**
-- Preserve existing API contracts (fields, response shapes, endpoints)
-- Do not remove or break old fields/endpoints until the old app version is fully deprecated
-
-**Code requirement:**
-When introducing backward-compatible logic, add a comment that explains:
-- Why the change is needed
-- Which app versions are affected
-- When the old logic or fields can be safely removed
-
-### 2. Test Current App Against New Backend
-
-Before every release — including force-update releases — QA must verify that the current production app version works correctly against the new backend.
-
-- Run all critical user flows with the current app version pointed at the new backend
-- If any critical flow fails: **block the release**, fix the backend, and re-test
-- No exceptions
-
-### 3. Rollback Plan
-
-Every release requires a documented rollback plan before it ships.
-
-The plan must answer:
-- Can the previous backend version be redeployed safely?
-- If not, what is the forward-fix strategy?
-- Who is the rollback owner (who has authority to trigger it)?
-- What are the rollback conditions (error rate threshold, critical failure types)?
-
-Do not release if any of the above is undefined.
-
-### 4. Core Principle
-
-> A backend release is only valid if the current production app continues to work after it deploys.
-
-Any change that breaks the current app version is an **invalid release**, regardless of whether a force update is planned.
-
-### 5. Config & Data Readiness
-
-- NEVER assume staging DB, config, or seed data matches production — verify explicitly
-- Validate all critical config at startup; fail fast if missing or invalid — no silent fallbacks
-- Treat code readiness, DB migration readiness, and config readiness as **three separate release checks**
-- Explicitly verify partner settings, category mappings, plan settings, and other business config before release
-- Keep a golden staging/UAT dataset covering critical flows and known edge cases
-- Do not rely on staging-only assumptions or seed data in production code paths
-
-### 6. Feature Flags & Observability
-
-- Use feature flags for high-risk business logic changes — do not gate on `NODE_ENV`
-- Add logs and alerts on every critical rule branch, fallback path, missing config, and unexpected behavior
-- Post-release verification is mandatory for critical flows — run smoke tests before **and** after production release
-
-### 7. Code Comment Policy
-
-Add code comments **only** when needed for:
-- Backward compatibility (explain affected versions and when it can be removed)
-- Migration safety (explain what state the DB must be in)
-- Release safety (explain the deploy order requirement)
-- Temporary transition logic (add a `TODO: remove after <version>` marker)
-
----
+Before cutting or deploying a backend release, follow the **release-safety** skill (backward compat with the current app, test current app vs new backend, rollback plan, config/data readiness, feature flags, comment policy). Core principle: **a backend release is valid only if the current production app keeps working after it deploys.**
 
 ## Config & Environment Rules
 
@@ -253,12 +185,7 @@ Add code comments **only** when needed for:
 
 ## Database & Migration Rules
 
-- NEVER alter database schema manually — always generate a migration file
-- Migration files are IMMUTABLE once merged to main; create a new one to fix, never edit an existing migration
-- Every migration MUST be reversible — implement both `up` and `down`
-- After generating a migration, verify it runs clean on a fresh DB before committing
-- NEVER seed production-specific data inside migration files; use dedicated seed scripts
-- Push row filters into the SQL WHERE — never fetch broadly and post-filter in application code (`rows.filter(...)` on a status/type/date condition the DB could evaluate). If the repository helper can't express the condition, extend the helper with an optional query/selector param; don't work around it in the service layer.
+When adding/changing a migration or schema, or debugging null fields after a migration, follow the **database-migrations** skill. Always-on guardrails: **never alter schema manually (always a migration); migrations are immutable once merged + reversible (up/down); push row filters into SQL WHERE — don't fetch broadly then filter in code.**
 
 ## Anti-patterns to Avoid
 
@@ -282,16 +209,6 @@ Add code comments **only** when needed for:
 - For non-HTTP projects (CLI, library, worker), apply the same principle at the outermost integration boundary: test through the public entrypoint (CLI invocation, exported API, queue message), not the internals.
 - Pin the smallest set that proves the contract: validation rejects, success path emits/responds correctly, regression case for the original bug, key edge cases. Skip `test.each` matrices and ceremony around helpers unless the user explicitly asks.
 - If the behavior cannot be exercised through the HTTP layer (e.g. logic inside a mocked service, validator, or helper that the route never reaches), do NOT fall back to a direct unit test — **skip the test entirely**. The HTTP-layer rule is absolute: "untestable through HTTP" means "untested", not "unit-tested as a workaround". Examples of forbidden tests: `tests/validators/**/*.test.js`, `tests/services/**/*.test.js`, `tests/utils/**/*.test.js` that bypass the route harness.
-
-## Null Fields After Migration
-
-When API response fields appear as `null` for a specific record type, **check whether the migration that adds those columns has actually been applied** before assuming the data was never saved.
-
-Root cause pattern: a new nullable column is added via migration, but the migration hasn't run on the environment being tested. JavaScript's `undefined != null` evaluates to `false` (loose equality), so an absent column (`undefined`) looks identical to a null column in conditional guards like `ctx.doc.field != null ? ... : null` — both silently return `null`. The bug is invisible until you inspect the DB schema.
-
-**Rule:** Before testing or debugging any feature that reads new DB columns, run `pnpm migration:run` (or equivalent) on the local DB first. If response fields are unexpectedly null, check `SHOW COLUMNS FROM <table>` before investigating code or data.
-
-**Before concluding there is a deployment or CI bug**, verify whether the migration file itself has actually been merged to a deployed branch. Run `git log origin/rc..HEAD --oneline` (or equivalent base branch) — if the migration commit appears there, the columns are absent simply because the PR hasn't merged yet, not because of a pipeline failure. Do not add CI steps or deployment changes to fix a missing migration that is still on a feature branch.
 
 ## Release Readiness
 
@@ -328,71 +245,7 @@ After creating a PR/MR, keep ownership of the change until it is verified in the
 
 ## Skills (Repeatable Workflows)
 
-Project skills live in `docs/skills/`. Each file documents a repeatable workflow for both humans and AI assistants.
-
-### Before starting any task
-Scan `docs/skills/` for relevant skills (filenames are verb-led; descriptions are in frontmatter). If a matching skill exists, follow it and treat it as authoritative. If it's incomplete or wrong for the current case, update it in place — do not improvise around it.
-
-### After completing any task
-If the workflow is likely to repeat, create or update the corresponding skill in `docs/skills/<kebab-case-name>.md` — do not ask for permission, just do it. End your response with one line:
-
-  ✏️ Skill <created|updated>: docs/skills/<filename>.md — <one-line reason>
-
-**Signals to skill it:**
-- Hit a non-obvious gotcha (env mismatch, hidden dependency, undocumented step)
-- Ran a multi-step sequence to set up, debug, deploy, or migrate
-- Answered "how do I X here" by tracing through several files
-- A teammate is likely to ask the same question later
-
-**Scope: generalize before writing.** A skill must cover the *class* of problems, not the single incident that triggered it. Before writing, ask: "what is the general workflow this incident is one instance of?" — and write THAT. Parameterize the incident-specific parts (the specific package, workflow file, error code, branch) into steps that work for the whole class; keep concrete values only as examples inside the steps.
-- Bad (incident-scoped): `fix-github-packages-401-in-ci.md` — one package, one workflow, one status code
-- Good (class-scoped): `fix-ci-package-registry-auth.md` — any registry auth failure (401/403), any workflow, any repo
-- If the generalized version would duplicate an existing skill, update that skill instead.
-
-**No trash skills — skip when in doubt.** Skip skill creation when: the task is genuinely one-off (exploratory questions, throwaway scripts, trivial edits); the workflow is already adequately covered by code comments, existing docs, or an existing skill; the fix is a single obvious change anyone would find from the error message alone; or the knowledge will be stale within weeks (tied to a temporary state, a single ticket, or one secret's current value). A skill that will never be opened again is noise that buries the useful ones — when unsure whether it clears the bar, don't create it.
-
-**"General" is necessary but NOT sufficient — the skill must also be project-specific AND non-obvious.** Do NOT write a skill that merely restates standard framework/library/language behavior (anything a competent dev knows from the framework docs, or that the error message alone would reveal), or that duplicates something already stated in a CLAUDE.md / AGENTS.md. Before writing, ask: "Would a competent dev already know this from the framework docs or the error?" If yes → it's trash, don't write it; at most link or extend an existing doc. (Real miss to avoid repeating: a skill documenting "Next.js basePath applies to `<Link>`/router but not raw `<a>`" — generic Next knowledge, already implied by the existing "mind Next basePath like /app" rule. Deleted as rác.)
-
-**Pre-write self-check — kill these five weaknesses before saving (each one sank a real skill):**
-1. **Discriminating trigger, not a symptom magnet.** The `description`/When-to-use must distinguish THIS cause from the other causes of the same symptom. A trigger like "endpoint 500s" or "field is null" fires on dozens of unrelated bugs → it gets opened at the wrong time and ignored. Anchor it to the *distinctive* signal: a specific log string, error class, or precondition (e.g. "generic 500 **and** the server log shows `is a non-existing property`"), not the user-visible symptom alone.
-2. **Re-test "non-obvious" against existing tooling.** Before claiming the cause is hard to find, check whether the stack trace, logs, or error message *already* surface it (e.g. the controller already `Logger.error`s the real message). If they do, the skill cannot rest on "the bug is mysterious" — it must earn its place on something else (a multi-place invariant, a counter-intuitive mechanism) or be cut. And make Step 1 = read that existing signal.
-3. **Disambiguate every overlap.** If any existing skill OR a CLAUDE.md/AGENTS.md rule shares the symptom, add a one-line "this vs that — same symptom, different cause" and cross-link it. Same-symptom/different-cause is the most confusable case and the easiest to silently duplicate.
-4. **Strip generic advice; if little remains, it's trash.** Delete sentences a competent dev already knows ("keep schema, model, and DB in sync"). Keep only the repo-specific mechanism. Do the strip test: remove the obvious lines — if the skill collapses, don't write it.
-5. **Write for the world as it is now.** Note what's already fixed/mitigated and exactly where the class still bites, so the skill doesn't describe an already-closed path as if it were live.
-(Real miss that motivated this: `listings-api/docs/skills/fix-entity-field-schema-column-drift.md` — useful core mechanism, but shipped with a symptom-only trigger, a "can't find the error" claim the controller's own logging already defeated, and no disambiguation from the existing "Null Fields After Migration" rule.)
-
-### File template
-Every skill file must follow this exact structure:
-
-    ---
-    name: <skill-name>
-    description: <one line — when to use this>
-    last-updated: YYYY-MM-DD
-    ---
-
-    ## When to use
-    <one paragraph — the trigger condition, including phrases the AI or a user might say>
-
-    ## Steps
-    1. ...
-
-    ## Verification
-    <how to confirm it worked — a command + expected output, a file that should now exist, an HTTP status, etc.>
-
-    ## Related (optional)
-    - [other-skill](./other-skill.md) — short reason for the link
-
-### Naming
-Short, verb-led, kebab-case. Examples: `setup-local-dev.md`, `run-migrations.md`, `debug-failing-tests.md`, `add-env-var.md`. Bad: `notes.md`, `misc.md`, `useful.md`.
-
-### Quality bar
-- Steps must be specific enough for a fresh assistant or new teammate to execute without context. Replace "configure the env" with the exact env var name and an example value.
-- Verification must be observable, not "looks good". Prefer a command + expected output over prose.
-- One skill = one workflow. If you have two sets of steps in one file, split.
-- Broad scope, concrete steps: the *trigger* and *steps* generalize to the whole problem class; the *examples* inside steps stay concrete (real commands, real file paths, real error strings from the incident).
-
-### Updating existing skills
-If you find a new gotcha or a step changes, update the existing skill in place — do not create a near-duplicate. Bump `last-updated` to today's date. If the workflow is fully superseded (tool replaced, approach abandoned), delete the file in the same commit and link the replacement from any related skill's `Related` section.
-
-### When the project has no `docs/skills/` yet
-First time you'd write a skill in a repo that doesn't have the folder: create `docs/skills/` and a minimal `README.md` pointing back to this rule, then add the first skill. Don't skip just because the folder is missing.
+Project skills live in `docs/skills/` (verb-led kebab-case; trigger in frontmatter `description`).
+- **Before a task:** scan `docs/skills/` for a relevant skill; if one matches, follow it (authoritative; update in place if wrong).
+- **After a repeatable task:** create/update the matching skill, then end your response with: `✏️ Skill <created|updated>: docs/skills/<filename>.md — <reason>`.
+- **Full authoring rules** (template, naming, quality bar, pre-write self-check, when NOT to write one): use the **authoring-project-skills** skill.

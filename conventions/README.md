@@ -14,14 +14,17 @@ those — they cross-reference them.
 | Doc | Use it when | Covers |
 |---|---|---|
 | [structure-a-backend-service.md](./structure-a-backend-service.md) | scaffolding a service or adding a feature | folder layout, feature modules, CQRS read/write split, multi-transport controllers, DTO/entity (+ domain models), `libs/` shared libraries, `migrations/` vs `seeds/`, config, test layout |
-| [write-service-code.md](./write-service-code.md) | writing the code inside a feature | return-early, pipelines over loops, `Promise.all`, null-over-undefined + API-response defaults, private-method placement, query performance (N+1, upsert, select, single round-trip, joins, indexes), events/SQS (incl. don't-throw in consumers), structured logging, decimal/date libs, how to write a test (AAA, factories, faker, coverage) |
+| [write-service-code.md](./write-service-code.md) | writing the code inside a feature | return-early, pipelines over loops, `Promise.all`, null-over-undefined + API-response defaults, private-method placement, query performance (N+1, upsert, select, single round-trip, joins, indexes), events/SQS (incl. don't-throw in consumers), structured logging, decimal/date libs, how to write an **integration** test (AAA, factories, faker, coverage) |
+| [write-unit-tests.md](./write-unit-tests.md) | writing isolated **unit** tests (mocked deps, no DB) | `test/unit` layout & naming, jest projects (unit + integration), shared mock factories + `createHandlerTestingModule`, CQRS-handler / service / DTO-validation patterns, entity builders, jest.mock patterns, assertions, cleanup |
 | [code-conventions.md](./code-conventions.md) | any code, as a quality baseline | style guide + linter (Airbnb/prettier), naming case table, file/function size, choosing the right array function, SOLID/KISS/SRP, magic numbers, casts & non-null assertions, negative conditionals, side effects, deep copy, TS gotchas |
 | [git-flow.md](./git-flow.md) | branching, MRs, releases, hotfixes | `develop → staging → master` flow, tagging, semantic versioning, hotfix path, CI/CD triggers |
 
 ## How to apply to a project
 
-1. **Read in order:** `structure` → `write-service-code` → `code-conventions` → `git-flow`. The
-   first two are most useful when starting/extending a service; the last two apply to any change.
+1. **Read in order:** `structure` → `write-service-code` → `write-unit-tests` → `code-conventions`
+   → `git-flow`. The first two are most useful when starting/extending a service; the rest apply to
+   any change. (`write-service-code` §8 is the integration/boundary test layer; `write-unit-tests`
+   is the isolated/mocked layer — a repo may use one or both.)
 2. **Map the placeholders to your project.** The examples use a neutral `listing` domain, a
    `@org/*` path-alias scope, and `App*Exception` names — substitute your real domain, library
    scope, and base-class names. The *conventions* stay; only the names change.

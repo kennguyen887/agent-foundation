@@ -198,10 +198,12 @@ queue. Principle: **use-case → event → handler → broker**, payloads are ex
   centrally, not per handler. ▸ *Other stacks:* any structured logger (zap, structlog, SLF4J + MDC) —
   key-value context, not interpolated strings.
 
-### 8. Writing a test
+### 8. Writing a test (integration layer)
 
-Tests run **through the boundary** with a real DB; see
-[structure-a-backend-service](./structure-a-backend-service.md) step 8 for the harness. Per spec:
+These are **integration tests** — they boot the app and hit the real transport/DB boundary. For the
+**isolated unit-test layer** (mocked deps, no DB — fast tests for handlers/services/DTOs) see
+[write-unit-tests](./write-unit-tests.md); a repo may run one layer or both (two jest projects).
+See [structure-a-backend-service](./structure-a-backend-service.md) step 8 for the harness. Per spec:
 
 ```ts
 describe('ListingCmdController', () => {

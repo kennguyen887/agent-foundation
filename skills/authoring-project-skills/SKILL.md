@@ -1,6 +1,7 @@
 ---
 name: authoring-project-skills
 description: Use when creating, updating, reviewing, or deciding whether to write a project skill (docs/skills/*.md) — covers the file template, verb-led naming, the quality bar, the pre-write 5-weakness self-check, and when NOT to write a skill. Pairs with the always-on "scan docs/skills before a task / create-or-update after" rule in CLAUDE.md.
+author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
 # Authoring project skills

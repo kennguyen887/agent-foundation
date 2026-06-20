@@ -1,6 +1,7 @@
 ---
 name: structure-a-backend-service
 description: Use when scaffolding a backend service, adding a feature/module, or reviewing folder layout, file/class naming, DTO & entity structure, or the CQRS read/write split. Language-agnostic with TS/NestJS examples.
+author: Ken Nguyễn <ntnpro@gmail.com>
 last-updated: 2026-06-20
 ---
 

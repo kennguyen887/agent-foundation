@@ -1,6 +1,7 @@
 ---
 name: release-safety
 description: Use before cutting or deploying a backend release (or reviewing release readiness) — backward compatibility with the current production app, testing the current app against the new backend, rollback plan, config/data readiness, feature flags & observability, and the code-comment policy for transition logic.
+author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
 # Release safety

@@ -1,6 +1,7 @@
 ---
 name: code-conventions
 description: Use when writing or reviewing code for general style conventions — style guide & linter, naming, file/function size, array functions, early return, SOLID/KISS, magic numbers, casts, side effects, deep copy, TS gotchas. Also indexes the full convention set. Language-agnostic, TS examples.
+author: Ken Nguyễn <ntnpro@gmail.com>
 last-updated: 2026-06-20
 ---
 

@@ -57,7 +57,7 @@ node sync.mjs --check    # run the secret scan over existing output only
 - **Fails closed** (exit 1) if the secret/PII scan finds a leak in the output.
 - **Flags** project-specific prose for manual review instead of mangling it.
 
-> Skills tagged `⚠ community` in the sync report are public downloads, not original work — review their licenses before publishing.
+> Community-download skills (listed in `sync.mjs` `COMMUNITY_HINTS`) are **referenced, not vendored** — `sync.mjs` skips them so this repo only republishes first-party, authored work. They stay installed locally; they're just not copied here.
 
 ## License
 

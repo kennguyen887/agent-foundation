@@ -12,6 +12,7 @@ This is meant to serve **any** AI coding agent, not one in particular. Portable 
 |---|---|
 | `rules/coding-guidelines.md` | Engineering rules (workflow, release safety, code style, testing). Sanitized, agent-neutral. |
 | `skills/` | Reusable skills (portable folders with a `SKILL.md`). |
+| `conventions/` | Backend-service engineering conventions — structure, code style, query performance, events, logging, tests, git flow. Language-agnostic, with TypeScript/NestJS examples. |
 | `mcp/servers.json` | MCP server definitions (open standard). Secret env values are `${PLACEHOLDER}` refs. |
 | `.env.example` | The secrets `mcp/servers.json` expects. Copy to `.env` and fill in. |
 

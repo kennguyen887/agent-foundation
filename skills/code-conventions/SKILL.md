@@ -1,6 +1,6 @@
 ---
 name: code-conventions
-description: Use when writing or reviewing code and you want the team's general engineering conventions — style guide & linter, naming case rules, file/function length, early return, choosing the right array function, SOLID/KISS/SRP, magic numbers, casts & non-null assertions, conditionals, side effects, deep copy, and TypeScript gotchas. Also the index of the full convention set (points to the companion docs for structure, query/events/logging, testing, and git flow). Language-agnostic principles with TypeScript examples.
+description: Use when writing or reviewing code for general style conventions — style guide & linter, naming, file/function size, array functions, early return, SOLID/KISS, magic numbers, casts, side effects, deep copy, TS gotchas. Also indexes the full convention set. Language-agnostic, TS examples.
 last-updated: 2026-06-20
 ---
 
@@ -15,7 +15,7 @@ To stay DRY, conventions detailed elsewhere are **summarized + linked**, not re-
 files go* → [structure-a-backend-service](./structure-a-backend-service.md); *service-internal
 patterns* (queries, events, logging, tests) → [write-service-code](./write-service-code.md); *unit
 tests* → [write-unit-tests](./write-unit-tests.md); workflow/release/config/DB →
-`rules/coding-guidelines.md`.
+`CLAUDE.md`.
 
 Each rule is a portable principle with a **▸ TS** example and **▸ Other stacks** note. The
 TypeScript-only gotchas (§8) are skippable for non-TS repos.
@@ -164,7 +164,7 @@ natural home (kept here as a map so nothing is lost):
 | `libs/` shared libraries (vendored, path-alias) | [structure-a-backend-service](./structure-a-backend-service.md) §1 |
 | **Migrations (DDL) vs seeds (DML)** | [structure-a-backend-service](./structure-a-backend-service.md) §5 |
 | Branching & release (develop→staging→master, tags, semver, hotfix) | [git-flow](./git-flow.md) |
-| Workflow, release safety, config/env, DB rules, root-cause, PR review | `rules/coding-guidelines.md` |
+| Workflow, release safety, config/env, DB rules, root-cause, PR review | `CLAUDE.md` |
 
 ## Verification
 
@@ -183,4 +183,4 @@ natural home (kept here as a map so nothing is lost):
 - [write-service-code](./write-service-code.md) — control flow, async, queries, events, logging, integration tests.
 - [write-unit-tests](./write-unit-tests.md) — isolated unit tests.
 - [git-flow](./git-flow.md) — branching & release workflow.
-- `rules/coding-guidelines.md` — the global engineering rules. This doc adds to them; it does not repeat them.
+- `CLAUDE.md` — the global engineering rules. This doc adds to them; it does not repeat them.

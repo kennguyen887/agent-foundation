@@ -1,6 +1,6 @@
 ---
 name: structure-a-backend-service
-description: Use when scaffolding a new backend service repo, adding a feature/module to an existing one, or checking that code follows team conventions. Covers folder layout, module organization, file & class naming, DTO and entity structure, the read/write (CQRS) handler split, multi-transport controllers, config, and unit/integration test layout. Written as language-agnostic principles with an illustrative TypeScript/NestJS reference, so it ports to repos in any language.
+description: Use when scaffolding a backend service, adding a feature/module, or reviewing folder layout, file/class naming, DTO & entity structure, or the CQRS read/write split. Language-agnostic with TS/NestJS examples.
 last-updated: 2026-06-20
 ---
 

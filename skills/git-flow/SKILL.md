@@ -1,6 +1,6 @@
 ---
 name: git-flow
-description: Use when branching, opening a merge request, cutting a release, or shipping a hotfix — the team's GitFlow-style branching & release workflow (develop → staging → master), tagging, semantic versioning, and the hotfix path. Language- and tool-agnostic (plain git); branch names may vary per project (e.g. staging vs RC).
+description: Use when branching, opening an MR, cutting a release, or shipping a hotfix — the develop→staging→master branching & release flow, tagging, semantic versioning, hotfix path. Tool-agnostic (plain git).
 last-updated: 2026-06-20
 ---
 
@@ -9,7 +9,7 @@ last-updated: 2026-06-20
 Reach for this when you start a feature branch, open a merge request, promote code between
 environments, tag a release, or ship an urgent production fix. It is the **branching & release**
 workflow; for commit-message rules and the "never target main for feature work" guard see the global
-*Git Commit Rules* / *Branch & PR Target Rules* in `rules/coding-guidelines.md`.
+*Git Commit Rules* / *Branch & PR Target Rules* in `CLAUDE.md`.
 
 > Branch **names** vary by project — some teams use `staging`, others `RC`, for the pre-production
 > branch. What matters is the **role** each branch plays, not its literal name. Map the names below
@@ -118,6 +118,6 @@ A release/hotfix followed the flow when:
 
 ## Related
 
-- `rules/coding-guidelines.md` — *Git Commit Rules* (no AI attribution), *Branch & PR Target Rules*,
+- `CLAUDE.md` — *Git Commit Rules* (no AI attribution), *Branch & PR Target Rules*,
   *Release Safety Rules* (backward compat, rollback plan, post-release verification).
 - [code-conventions](./code-conventions.md) — one responsibility per MR.

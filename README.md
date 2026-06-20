@@ -30,6 +30,22 @@ This is meant to serve **any** AI coding agent, not one in particular. Portable 
 
 Most installed capabilities (the `gsd-*` skills/agents/hooks from get-shit-done, plus the `superpowers` / `ecc` / `compound-engineering` / `warp` plugins) come from public marketplaces. Copying their source here would republish other people's code under this repo's license and go stale on every upstream update. Instead, `plugins/manifest.json` records exactly what to install and `bootstrap.sh` reinstalls it. Only first-party, authored content is vendored.
 
+## Community / marketplace skills (referenced, not vendored)
+
+To keep this repo first-party and light, third-party skills are **not** copied here — only listed
+below with where to reinstall them on a new machine. They stay in your local `~/.claude/skills/`;
+`sync.mjs` skips anything in its `COMMUNITY_HINTS` set so it never republishes them.
+
+| Skill(s) | Source | Reinstall |
+|---|---|---|
+| `ask-matt`, `codebase-design`, `diagnosing-bugs`, `domain-modeling`, `prototype`, `to-prd`, `triage`, `to-issues`, `implement`, `grill-with-docs`, `improve-codebase-architecture`, `git-guardrails-claude-code`, `setup-pre-commit`, `setup-matt-pocock-skills` | **Matt Pocock** — <https://github.com/mattpocock/skills> | clone the repo and copy the folders into `~/.claude/skills/`, or run the `setup-matt-pocock-skills` skill (which installs the rest) |
+| `resolving-merge-conflicts` | **superpowers** plugin (`claude-plugins-official` marketplace) | comes with the `superpowers` plugin — see `claude/plugins.json` + `claude/bootstrap.sh` |
+| `stop-slop` | **Hardik Pandya** — <https://hvpandya.com> | copy into `~/.claude/skills/` |
+| `sentry-cli` | **Sentry** CLI guide (sentry plugin/integration) | reinstall from the Sentry skill source |
+| `caveman`, `zoom-out` | community (source not recorded) | locate in your marketplace/skill source and copy into `~/.claude/skills/` |
+
+> `implement` is the third step of Matt Pocock's `to-prd` → `to-issues` → `implement` flow (inferred from its description; verify on reinstall).
+
 ## Using it
 
 ```bash

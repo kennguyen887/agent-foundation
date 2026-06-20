@@ -1,7 +1,8 @@
 ---
 name: write-unit-tests
 description: Use when writing isolated unit tests (mocked deps, no DB) for CQRS handlers, services, or DTOs. Mock factories, a handler testing-module helper, DTO validation, the AAA pattern, entity builders. TS/NestJS/Jest examples.
-author: Ken Nguyễn <ntnpro@gmail.com>
+metadata:
+  author: Ken Nguyễn <ntnpro@gmail.com>
 last-updated: 2026-06-20
 ---
 

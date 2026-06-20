@@ -1,7 +1,8 @@
 ---
 name: structure-a-frontend-app
 description: Use when scaffolding a frontend app, adding a feature or page, or reviewing FE folder layout — thin routing → feature modules, the feature-module pattern (Component + .actions hooks + .hook + styles + barrel), shared-vs-feature code, naming, path aliases, request/response models. React/Next.js reference, framework-flexible.
-author: Ken Nguyễn <ntnpro@gmail.com>
+metadata:
+  author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
 # Structure a frontend app

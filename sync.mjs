@@ -70,7 +70,9 @@ const COMMUNITY_HINTS = new Set([
   // Matt Pocock skills (github.com/mattpocock/skills) — installed locally, not authored here.
   "ask-matt", "codebase-design", "diagnosing-bugs", "domain-modeling", "prototype",
   "to-prd", "triage", "tdd", "grill-me", "handoff", "teach", "grilling",
-  "migrate-to-shoehorn", "scaffold-exercises", "writing-great-skills",
+  "migrate-to-shoehorn", "scaffold-exercises", "writing-great-skills", "implement",
+  // Other third-party plugin skills (superpowers / sentry / etc.) — not authored here.
+  "resolving-merge-conflicts", "sentry-cli",
 ]);
 
 // Text extensions get sanitized; anything else is copied byte-for-byte.

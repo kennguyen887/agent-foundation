@@ -11,7 +11,7 @@ This is meant to serve **any** AI coding agent, not one in particular. Portable 
 | Path | What it is |
 |---|---|
 | `rules/coding-guidelines.md` | Engineering rules (workflow, release safety, code style, testing). Sanitized, agent-neutral. |
-| `skills/` | Reusable skills (portable folders with a `SKILL.md`) — incl. the backend-service conventions (`structure-a-backend-service`, `write-service-code`, `write-unit-tests`, `code-conventions`, `git-flow`), language-agnostic with TS/NestJS examples. |
+| `skills/` | Reusable skills (portable folders with a `SKILL.md`). Includes **backend** conventions (`structure-a-backend-service`, `write-service-code`, `write-unit-tests`), **frontend** conventions (`structure-a-frontend-app`, `write-frontend-code`, `write-frontend-tests`), the shared `code-conventions` + `git-flow`, and rules extracted from the global guidelines (`release-safety`, `database-migrations`, `authoring-project-skills`). Language/framework-flexible. |
 | `mcp/servers.json` | MCP server definitions (open standard). Secret env values are `${PLACEHOLDER}` refs. |
 | `.env.example` | The secrets `mcp/servers.json` expects. Copy to `.env` and fill in. |
 

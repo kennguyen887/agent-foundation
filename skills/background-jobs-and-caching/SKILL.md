@@ -48,6 +48,10 @@ cross-service.** Complementary — don't merge them.
     await execute();
   }
   ```
+  *Alternative — a Redis lock for short-window/HTTP dedup:* `SET lock:<key> 1 PX <ttl> NX` succeeds
+  only if the key is absent; a `null` reply means a duplicate is already in flight → skip (fail-safe:
+  treat errors as "locked"). Lighter than a DB row for idempotency-key/endpoint dedup; the DB-row
+  lock is better for a permanent once-only guarantee.
 - **Graceful shutdown** — drain in-flight jobs on deploy:
   ```ts
   export class JobQueueModule implements OnApplicationShutdown {

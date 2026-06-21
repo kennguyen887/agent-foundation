@@ -1,5 +1,7 @@
 # agent-foundation
 
+**Production-grade [Claude Code](https://claude.com/claude-code) skills for backend & frontend engineering** — language-flexible conventions plus **step-by-step third-party integration recipes**: payments (Stripe · Rapyd · CyberSource · UOB · Apple Pay / Google Pay), identity & SSO (Singpass · Keycloak · OIDC / OAuth2 · 3-D Secure), messaging (Twilio SMS), and Docker / CI-CD. Installable as a **Claude Code skills marketplace**.
+
 Everything that boosts an AI coding agent — **rules, hooks, skills, MCP, and tools** — exported from a working setup and sanitized for open source.
 
 This is meant to serve **any** AI coding agent, not one in particular. Portable capabilities live at the top level (plain-Markdown rules, portable skill folders, standard MCP JSON). Anything that only works with a specific agent lives in its own namespaced directory — today that's `claude/` (Claude Code). Other agents get sibling dirs (`cursor/`, `codex/`, …) as they're added. Adopt the whole thing or cherry-pick a piece.
@@ -20,6 +22,32 @@ This repo doubles as a **Claude Code marketplace** — the `skills/` folder ship
 Skills then load on demand, namespaced as `/engineering-skills:<skill>`. Pull updates later with
 `/plugin marketplace update agent-foundation`. (Prefer files-only? Copy `skills/` into
 `~/.claude/skills/` via `claude/bootstrap.sh` instead — no marketplace needed.)
+
+## Third-party integration recipes
+
+Most "integration" guidance is generic. These skills ship **concrete, step-by-step recipes** for real
+providers — **environment variables, dashboard setup, request signing, webhook verification, and the
+gotchas** — each grounded in production code and mapped back to a reusable pattern. They load on demand
+from each skill's `references/`. Stacks shown are NestJS/TypeScript + React, but every recipe is
+written principle-first so it ports to any language.
+
+**Payments** — see [`integrate-external-services`](skills/integrate-external-services/)
+- **Stripe** — PaymentIntents, raw-body webhook (`constructEvent`), idempotency keys, wallets, test cards + Stripe CLI.
+- **Rapyd** — Rapyd Collect, HMAC-signed requests, hosted card tokenization, webhook HMAC verification.
+- **CyberSource** — signed-JWT (P12) auth, Microform / Secure Acceptance tokenization, full **3-D Secure** (payer-auth) flow.
+- **UOB PayNow** — PayNow QR collection, mutual-TLS + JWS-signed requests, encrypted + signed webhooks.
+- **Apple Pay / Google Pay / WeChat Pay / Alipay** — device-wallet tokens, method→gateway routing, Apple merchant validation.
+
+**Identity & SSO (OIDC / OAuth2)** — see [`integrate-identity-providers`](skills/integrate-identity-providers/)
+- **Singpass (NDI OIDC)** — private-key-JWT client assertion, JWE-encrypted ID token (decrypt → verify), hosted JWKS, verified Myinfo (KYC) attributes.
+- **Keycloak** — identity broker, `.well-known` discovery, JWKS token verification, client-credentials with latency-safe caching.
+- **Social login** (Google / Apple / Facebook) — OIDC relying-party flow with PKCE + state/nonce, map `(provider, subject)` → user.
+
+**Messaging** — **Twilio SMS** (Messaging Service send + `X-Twilio-Signature` status webhook), behind a provider-agnostic `send()` facade.
+
+**Build & ship** — [`containerize-and-ship-a-service`](skills/containerize-and-ship-a-service/): multi-stage Docker, base via dependency proxy, build-secret scrubbing, a GitLab/GitHub CI pipeline, and branch→environment deploys.
+
+> Also covered as reusable patterns: **inbound webhooks** (raw-body capture, signature verify, idempotent fast-ack), **outbound resilience** (circuit breaker, retry/backoff), **service-to-service** RPC + SNS→SQS event fan-out, and a typed **error model**.
 
 ## Layout
 

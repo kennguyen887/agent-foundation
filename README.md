@@ -11,7 +11,7 @@ This is meant to serve **any** AI coding agent, not one in particular. Portable 
 | Path | What it is |
 |---|---|
 | `rules/coding-guidelines.md` | Engineering rules (workflow, release safety, code style, testing). Sanitized, agent-neutral. |
-| `skills/` | Reusable skills (portable folders with a `SKILL.md`). Includes **backend** conventions (`structure-a-backend-service`, `write-service-code`, `write-cross-cutting-code`, `write-unit-tests`, `background-jobs-and-caching`, `import-data-from-csv`, `design-an-error-model`, `structure-a-shared-backend-lib`), **service integration** (`integrate-internal-services`, `integrate-external-services`), **frontend** conventions (`structure-a-frontend-app`, `write-frontend-code`, `write-frontend-tests`, `structure-a-shared-ui-lib`, `secure-a-frontend-app`, `handle-files-frontend`), the shared `code-conventions` + `git-flow`, and rules extracted from the global guidelines (`release-safety`, `database-migrations`, `authoring-project-skills`). Language/framework-flexible. |
+| `skills/` | Reusable skills (portable folders with a `SKILL.md`). Language/framework-flexible — full list in the **[Skills](#skills)** section below. |
 | `mcp/servers.json` | MCP server definitions (open standard). Secret env values are `${PLACEHOLDER}` refs. |
 | `.env.example` | The secrets `mcp/servers.json` expects. Copy to `.env` and fill in. |
 
@@ -25,6 +25,64 @@ This is meant to serve **any** AI coding agent, not one in particular. Portable 
 | `claude/bootstrap.sh` | Reproduce the Claude Code setup on a fresh machine. |
 
 `sync.mjs` — the exporter. Re-run to refresh the repo from your live config (currently sources `~/.claude`).
+
+## Skills
+
+Every skill is a portable folder with a `SKILL.md`; only the one-line `description` is always loaded
+(the trigger), and the body loads on demand. All examples follow **principle → example → other
+stacks**, so they apply to any language/framework. 22 skills:
+
+### Backend — structure & code
+
+| Skill | What it covers |
+|---|---|
+| `structure-a-backend-service` | Scaffold a service / feature module — folder layout, file/class naming, DTO & entity structure, the CQRS read/write split. |
+| `structure-a-shared-backend-lib` | Organize a shared infra lib (`@org/infra-*`) — split by dependency weight, one barrel per package, framework as peer dep, and the canonical primitives it ships (base entity, pagination/response DTOs, transformers, type helpers). |
+| `write-service-code` | Feature-body code — control flow, `Promise.all`, query performance (N+1, upsert, joins, indexes), events/SQS, logging, decimal/date libs, nullability. |
+| `write-cross-cutting-code` | Request-pipeline primitives — custom decorators (param/metadata/method-wrapper), guards (incl. OR-composition), pipes, interceptors, middleware, custom validators. |
+| `design-an-error-model` | One error contract — typed exception hierarchy, validation-error flattener, global filter → uniform body (+ trace id), RPC twin, log-and-swallow decorator. |
+| `write-unit-tests` | Isolated unit tests (mocked deps, no DB) for CQRS handlers/services/DTOs — mock factories, AAA, entity builders. |
+| `background-jobs-and-caching` | Bull queues (multi-queue, delayed jobs, idempotency, graceful shutdown) + Redis cache (read-through wrap, key conventions, SCAN invalidation). |
+| `import-data-from-csv` | Bulk CSV import — streaming parse, per-row error report, normalization, chunked atomic upsert, partial-success response, fan-out to workers. |
+
+### Backend — service integration
+
+| Skill | What it covers |
+|---|---|
+| `integrate-internal-services` | Service-to-service in the same platform — RPC envelope + server handlers, SNS→SQS fan-out, consumer ack/DLQ + lifecycle hooks, cross-service batch+cache reads, context propagation, worker shape. |
+| `integrate-external-services` | Third-party systems — anti-corruption adapter, resilient HTTP (circuit breaker + retry/backoff), outbound signing + idempotency, inbound webhooks (verify/idempotent/fast-ack), partner/public API edge. |
+
+### Frontend
+
+| Skill | What it covers |
+|---|---|
+| `structure-a-frontend-app` | Scaffold a FE app — thin routing → feature modules (Component + `.actions` + `.hook` + styles + barrel), shared-vs-feature code, aliases, request/response models. |
+| `structure-a-shared-ui-lib` | Internal shared UI / design-system lib — src layout, folder-per-component with version coexistence, store/query/Utils wrappers, versioned design tokens, subpath exports. |
+| `write-frontend-code` | FE feature code — React Query, DTOs, Zustand + Context state, custom hooks, RHF + Yup forms, performance, Tailwind + tokens + CSS Modules, i18n, SSR/hydration. |
+| `write-frontend-tests` | Jest + React Testing Library units (utils/hooks/components) + Cypress + Cucumber e2e — where tests live, router mocking, the lint/type/test gates. |
+| `secure-a-frontend-app` | Auth/session — OIDC via NextAuth + token refresh/injection, route guards + permission-matrix RBAC, SSR cookie propagation + hydration, vault secrets + config split. |
+| `handle-files-frontend` | One file-util module — CSV (papaparse), download (file-saver/jszip), PDF (pdf.js), upload with magic-number MIME + presigned URL + image resize. |
+
+### Shared — conventions & process
+
+| Skill | What it covers |
+|---|---|
+| `code-conventions` | General style — naming, file/function size, array functions, early return, SOLID/KISS, magic numbers, casts, TS gotchas. Also indexes the full convention set. |
+| `git-flow` | Branching & release — develop→staging→master flow, tagging, semantic versioning, hotfix path. Tool-agnostic (plain git). |
+
+### Rules (extracted from the global guidelines)
+
+| Skill | What it covers |
+|---|---|
+| `release-safety` | Before cutting/deploying a backend release — backward compat with the live app, test current app vs new backend, rollback plan, config/data readiness, feature flags. |
+| `database-migrations` | Migration rules (additive, reversible, immutable, seed-vs-migration, push filters into SQL) + the "null fields = unapplied migration" gotcha. |
+| `authoring-project-skills` | Creating/updating/reviewing a project skill — file template, verb-led naming, the quality bar, a 5-weakness self-check, and when NOT to write one. |
+
+### Tools
+
+| Skill | What it covers |
+|---|---|
+| `send-slack` | Send a Slack message to a channel/DM via the local `send.js` script. |
 
 ## Why plugins aren't vendored
 

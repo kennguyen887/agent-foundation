@@ -4,6 +4,23 @@ Everything that boosts an AI coding agent — **rules, hooks, skills, MCP, and t
 
 This is meant to serve **any** AI coding agent, not one in particular. Portable capabilities live at the top level (plain-Markdown rules, portable skill folders, standard MCP JSON). Anything that only works with a specific agent lives in its own namespaced directory — today that's `claude/` (Claude Code). Other agents get sibling dirs (`cursor/`, `codex/`, …) as they're added. Adopt the whole thing or cherry-pick a piece.
 
+## Install as a Claude Code plugin
+
+This repo doubles as a **Claude Code marketplace** — the `skills/` folder ships as one plugin
+(`engineering-skills`). In Claude Code:
+
+```text
+# 1. add this marketplace (public repo — no auth needed)
+/plugin marketplace add kennguyen887/agent-foundation
+
+# 2. install the skills plugin
+/plugin install engineering-skills@agent-foundation
+```
+
+Skills then load on demand, namespaced as `/engineering-skills:<skill>`. Pull updates later with
+`/plugin marketplace update agent-foundation`. (Prefer files-only? Copy `skills/` into
+`~/.claude/skills/` via `claude/bootstrap.sh` instead — no marketplace needed.)
+
 ## Layout
 
 **Portable (any agent):**

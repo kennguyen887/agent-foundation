@@ -22,7 +22,9 @@ cross-service.** Complementary — don't merge them.
   BullModule.registerQueue({ name: REMINDER_QUEUE }, { name: PAYMENT_EXPIRY_QUEUE });
   ```
   Set **default job options** centrally: `removeOnComplete: true`, `removeOnFail: { age: <1h>, count: <N> }`
-  — so Redis doesn't fill with finished jobs.
+  (so Redis doesn't fill with finished jobs), plus a **retry policy** — `attempts: <n>` with
+  `backoff: { type: 'exponential', delay: <ms> }` — so a transient failure retries with growing delay
+  instead of dying on the first error or hammering the dependency instantly.
 - **Producer** injects the queue; **processor** handles it:
   ```ts
   @InjectQueue(PAYMENT_EXPIRY_QUEUE) private queue: Queue;
@@ -59,7 +61,9 @@ cross-service.** Complementary — don't merge them.
   }
   ```
 - **No cron lib for data-driven timing** — model "do X at time T" as a *delayed job*, not a cron
-  sweep (jobs persist in Redis, survive restarts). Use a scheduler only for fixed wall-clock tasks.
+  sweep (jobs persist in Redis, survive restarts). Use a scheduler only for fixed wall-clock tasks —
+  and guard a recurring/cron job against **overlap** (a slow run must not double-fire) with the same
+  Redis `SET NX` lock: skip the run if the lock is already held.
 ▸ *Other stacks:* any job lib (BullMQ, Sidekiq, Celery, River) — same shape: named queues, delayed
 jobs, idempotent handlers, drain on shutdown.
 

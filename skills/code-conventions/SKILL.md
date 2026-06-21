@@ -110,8 +110,14 @@ Keep callbacks **pure** (don't mutate the source array). ▸ *Other stacks:* the
   where does it belong, what does it do?* One reason to change per function/class/module.
 - **KISS — simplest thing that works.** Prefer simple, reusable, readable, maintainable code; review
   your own diff before asking others to. Add a comment only where the code is genuinely non-obvious.
-- **One responsibility per PR/MR too.** If a change does several unrelated things, split it into
-  separate PRs — it reviews faster and reverts cleanly.
+- **One responsibility per PR/MR — but a cohesive change is ONE PR, don't over-split.** "One
+  responsibility" means one *logical* change, not one file or one mechanical step. A feature that
+  spans several steps (e.g. a layout migration + its barrel + the import alias, or a fix + its test)
+  is **one PR** — use multiple *commits* to tell the story, not multiple PRs. Split into separate PRs
+  only when the parts are **genuinely independent** (each reviews and reverts on its own and neither
+  needs the other to make sense). **Never build a deep stack of dependent PRs** (#A→#B→#C→…): it's
+  slower to review and a nightmare to merge/rebase — far worse than one well-described PR. When in
+  doubt, default to **one PR**.
 
 ### 7. Traps to avoid
 

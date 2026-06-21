@@ -87,7 +87,8 @@ gate sensitive actions on verification level.
 ## Vendor recipes (step-by-step)
 Step-by-step guides for specific providers live in [`references/`](./references/) and load **on demand**.
 - [`references/keycloak.md`](./references/keycloak.md) — Keycloak as token authority + identity broker: discovery, JWKS verify, client-credentials (latency-safe TTL), brokering Google/Apple/Singpass.
-- *(more per provider — Singpass, social login, …)*
+- [`references/singpass.md`](./references/singpass.md) — Singpass (NDI OIDC) relying-party: private-key-JWT client assertion, JWE-encrypted ID token (decrypt → verify), hosted JWKS, verified Myinfo (KYC) attributes.
+- *(more per provider — social login, …)*
 
 ## Verification
 - Login uses **authorization-code + PKCE**, validates `state`, exchanges server-side — no implicit flow.

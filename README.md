@@ -30,7 +30,7 @@ This is meant to serve **any** AI coding agent, not one in particular. Portable 
 
 Every skill is a portable folder with a `SKILL.md`; only the one-line `description` is always loaded
 (the trigger), and the body loads on demand. All examples follow **principle → example → other
-stacks**, so they apply to any language/framework. 22 skills:
+stacks**, so they apply to any language/framework. 24 skills:
 
 ### Backend — structure & code
 
@@ -45,12 +45,14 @@ stacks**, so they apply to any language/framework. 22 skills:
 | `background-jobs-and-caching` | Bull queues (multi-queue, delayed jobs, idempotency, graceful shutdown) + Redis cache (read-through wrap, key conventions, SCAN invalidation). |
 | `import-data-from-csv` | Bulk CSV import — streaming parse, per-row error report, normalization, chunked atomic upsert, partial-success response, fan-out to workers. |
 
-### Backend — service integration
+### Backend — integration (services & third-party)
 
 | Skill | What it covers |
 |---|---|
 | `integrate-internal-services` | Service-to-service in the same platform — RPC envelope + server handlers, SNS→SQS fan-out, consumer ack/DLQ + lifecycle hooks, cross-service batch+cache reads, context propagation, worker shape. |
-| `integrate-external-services` | Third-party systems — anti-corruption adapter, resilient HTTP (circuit breaker + retry/backoff), outbound signing + idempotency, inbound webhooks (verify/idempotent/fast-ack), partner/public API edge. |
+| `integrate-external-services` | Third-party systems — anti-corruption adapter, resilient HTTP (circuit breaker + retry/backoff), outbound signing + idempotency, inbound webhooks (verify/idempotent/fast-ack), partner/public API edge, wallet payments. |
+| `integrate-identity-providers` | Third-party login + identity/KYC verification — OIDC relying-party flow (PKCE + state/nonce), token validation (JWKS / introspection), identity broker, map `(provider, subject)`→user, verified attributes (e.g. Singpass). |
+| `issue-client-sdk-credentials` | Back a client SDK that talks to a vendor directly (video/maps/chat) — mint short-lived user-scoped signed tokens (secret server-side), provider-adapter, resilient management API, session lifecycle + webhooks. |
 
 ### Frontend
 

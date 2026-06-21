@@ -291,6 +291,14 @@ describe('ListingCmdController', () => {
     send<I, R>(pattern: string, data: I) { return this.base.sendAsync<I, R>(this.proxy, pattern, data); }
   }
   ```
+- **Scope every read/write to the caller's tenant/permitted set.** For non-admin roles, an
+  interceptor auto-injects the caller's allowed scope (e.g. their `locationIds`/`orgId`) into the
+  query — or **intersects** a requested scope with the allowed set and drops the rest — so a handler
+  can't return or mutate another tenant's data even when asked. Centralize this in one
+  interceptor/guard; don't re-check in every handler. ▸ *Other stacks:* a query-scoping middleware or
+  DB row-level security.
+- **Bulk CSV/spreadsheet import** (streaming parse + per-row error report + chunked upsert) has its
+  own skill — see `import-data-from-csv`.
 - **Background jobs & caching** (Bull queues, Redis cache) have their own skill —
   see `background-jobs-and-caching`.
 ▸ *Other stacks:* a DB transaction + outbox/compensation; a global error-swallowing wrapper on async

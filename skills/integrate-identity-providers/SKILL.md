@@ -84,6 +84,11 @@ gate sensitive actions on verification level.
 - **Never log tokens or PII** (id numbers) — mask (see `write-service-code` §7). Short-lived access
   tokens + refresh handling; store only what you need.
 
+## Vendor recipes (step-by-step)
+Step-by-step guides for specific providers live in [`references/`](./references/) and load **on demand**.
+- [`references/keycloak.md`](./references/keycloak.md) — Keycloak as token authority + identity broker: discovery, JWKS verify, client-credentials (latency-safe TTL), brokering Google/Apple/Singpass.
+- *(more per provider — Singpass, social login, …)*
+
 ## Verification
 - Login uses **authorization-code + PKCE**, validates `state`, exchanges server-side — no implicit flow.
 - Every token is **signature-verified against JWKS** with `iss`/`aud`/`exp` (or introspected); JWKS cached.

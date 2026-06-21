@@ -148,6 +148,18 @@ versioned contract.
   (Large data imports → `import-data-from-csv`; in-process queues → `background-jobs-and-caching`.)
 ▸ *Other stacks:* `Promise.allSettled` / `errgroup` collecting per-item errors / `asyncio.gather(return_exceptions=True)`.
 
+## Vendor recipes (step-by-step)
+The sections above are the reusable *pattern*. Concrete **step-by-step implementation guides** for
+specific providers live in [`references/`](./references/) and load **on demand** — they don't add to
+this skill's always-on cost. Each recipe is "how to wire *this* vendor" for the patterns above, with
+its steps mapped back to the section numbers.
+- [`references/stripe.md`](./references/stripe.md) — card + wallet payments (PaymentIntents), webhooks, testing, gotchas.
+- [`references/rapyd.md`](./references/rapyd.md) — card + PayNow via Rapyd Collect; HMAC-signed requests; hosted card tokenization; webhook HMAC.
+- [`references/cybersource.md`](./references/cybersource.md) — card + tokenization (microform / Secure Acceptance) + 3-D Secure; signed-JWT (P12) auth.
+- [`references/uob.md`](./references/uob.md) — PayNow QR collection; mutual-TLS + JWS-signed requests; encrypted + signed webhooks.
+- [`references/wallet-payments.md`](./references/wallet-payments.md) — Apple/Google/WeChat Pay + Alipay; method→gateway routing; opaque-token flow; Apple merchant validation.
+- *(catalog grows per provider — SMS/notification, …)*
+
 ## Verification
 - Every vendor sits **behind an interface you own** (DTOs + errors translated at the boundary);
   callers pick an impl via a factory, not a vendor SDK import.

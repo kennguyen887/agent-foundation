@@ -282,8 +282,8 @@ describe('ListingCmdController', () => {
   (log + return). (This is the in-process twin of the SQS "don't throw" rule in §6.)
 - **External/microservice clients own their lifecycle.** A `ClientProxy` (TCP/microservice client)
   **closes on `OnApplicationShutdown`** (no zombie connections on deploy); retry config (attempts +
-  delay) is **env-driven**; route every call through one base `send()` wrapper that centralizes
-  retries + error mapping (don't scatter `clientProxy.send` across services).
+  delay) is **env-driven** (exponential backoff + jitter, capped); route every call through one base
+  `send()` wrapper that centralizes retries + error mapping (don't scatter `clientProxy.send` across services).
   ```ts
   @Injectable() export class WalletClient implements OnApplicationShutdown {
     constructor(@Inject(walletMs) private readonly proxy: ClientProxy) {}

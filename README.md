@@ -30,7 +30,7 @@ This is meant to serve **any** AI coding agent, not one in particular. Portable 
 
 Every skill is a portable folder with a `SKILL.md`; only the one-line `description` is always loaded
 (the trigger), and the body loads on demand. All examples follow **principle → example → other
-stacks**, so they apply to any language/framework. 23 skills:
+stacks**, so they apply to any language/framework. 24 skills:
 
 ### Backend — structure & code
 
@@ -72,6 +72,7 @@ stacks**, so they apply to any language/framework. 23 skills:
 |---|---|
 | `code-conventions` | General style — naming, file/function size, array functions, early return, SOLID/KISS, magic numbers, casts, TS gotchas. Also indexes the full convention set. |
 | `git-flow` | Branching & release — develop→staging→master flow, tagging, semantic versioning, hotfix path. Tool-agnostic (plain git). |
+| `containerize-and-ship-a-service` | Docker + CI/CD — multi-stage build (slim runtime), base via dependency proxy, build-time creds scrubbed before the final stage, lockfile-first caching, app/migration/test images, thin per-repo pipeline including a shared template, branch→env deploys + secrets via CI vars. |
 
 ### Rules (extracted from the global guidelines)
 

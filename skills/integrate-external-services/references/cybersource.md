@@ -60,10 +60,46 @@ const res = await axios.request({ method, url, data: payload, headers: { Authori
 Then pay with the transient token, creating a reusable instrument (`actionList: ['TOKEN_CREATE']`,
 `tokenInformation.transientTokenJwt`, `processingInformation.capture: true`).
 
-## Step 4 — 3-D Secure (payer auth)
-`setup → checkEnrollment (device info + returnUrl) → [client challenge] → getResults`, then re-send the
-payment with `actionList: ['VALIDATE_CONSUMER_AUTHENTICATION']` + `authenticationTransactionId`. Normalize
-browser device-info fields to the values CyberSource accepts.
+## Step 4 — 3-D Secure / payer authentication (the detailed multi-call flow)
+3DS is a **sequence of calls on the `risk/v1` prefix**; its result feeds the final payment. First
+**normalize the browser device info** (color depth from a whitelist, screen height/width, language,
+time-zone offset, accept header, user agent, IP) — CyberSource rejects out-of-range values.
+
+**4a — Setup** (`POST risk/v1/authentication-setups`). Body = a saved instrument or a transient token:
+```ts
+{ clientReferenceInformation: { code: orderId },
+  paymentInformation: { paymentInstrument: { id }, customer: { id } } }   // or { tokenInformation: { jti } }
+```
+Returns a **device-data-collection (DDC) URL + access token**; the client runs the hidden DDC iframe so
+the issuer can fingerprint the browser.
+
+**4b — Enrollment / check** (`POST risk/v1/authentications`):
+```ts
+{ orderInformation: { amountDetails: { totalAmount, currency } },
+  consumerAuthenticationInformation: { deviceChannel: 'BROWSER', challengeWindowSize: '05',
+    returnUrl: `${CYBERSOURCE_PAYER_AUTH_RETURN_URL}/${orderId}`, referenceId },
+  deviceInformation: normalizedDeviceInfo,
+  paymentInformation /* or tokenInformation: { jti } */ }
+```
+Two outcomes:
+- **Frictionless** → `AUTHENTICATION_SUCCESSFUL`, you get `authenticationTransactionId` now → go to **4d**.
+- **Challenge (step-up)** → `PENDING_AUTHENTICATION` + a `stepUpUrl` + `accessToken`; the client POSTs to
+  `stepUpUrl` (the issuer's challenge) and returns to your `returnUrl`.
+
+**4c — Results** (after a challenge: `POST risk/v1/authentication-results`):
+```ts
+{ clientReferenceInformation: { code: orderId },
+  consumerAuthenticationInformation: { authenticationTransactionId } }   // → returns eci, cavv, xid/dsTransId
+```
+
+**4d — Authorize WITH the authentication** (on `pts/v2/payments`):
+```ts
+processingInformation: { capture: true, actionList: ['VALIDATE_CONSUMER_AUTHENTICATION'] },
+consumerAuthenticationInformation: { authenticationTransactionId },
+```
+A payment that comes back `PENDING_AUTHENTICATION` means 3DS wasn't completed — **do not treat it as
+success**. (For card networks, MasterCard uses `ucafAuthenticationData`/`ucafCollectionIndicator`; others
+use `cavv` — set the right field per `cardType`.)
 
 ## Step 5 — Webhook (Secure Acceptance)
 Recompute HMAC-SHA256 over the `signed_field_names` values → base64, compare to the posted `signature`

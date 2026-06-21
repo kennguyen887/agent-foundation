@@ -45,6 +45,8 @@ written principle-first so it ports to any language.
 
 **Messaging** — **Twilio SMS** (Messaging Service send + `X-Twilio-Signature` status webhook), behind a provider-agnostic `send()` facade.
 
+**Public X data** - **Xquik** public X search, lookup, monitor events, and webhook delivery, behind a server-side data adapter.
+
 **Build & ship** — [`containerize-and-ship-a-service`](skills/containerize-and-ship-a-service/): multi-stage Docker, base via dependency proxy, build-secret scrubbing, a GitLab/GitHub CI pipeline, and branch→environment deploys.
 
 > Also covered as reusable patterns: **inbound webhooks** (raw-body capture, signature verify, idempotent fast-ack), **outbound resilience** (circuit breaker, retry/backoff), **service-to-service** RPC + SNS→SQS event fan-out, and a typed **error model**.

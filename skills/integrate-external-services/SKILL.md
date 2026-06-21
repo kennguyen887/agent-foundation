@@ -158,6 +158,7 @@ its steps mapped back to the section numbers.
 - [`references/cybersource.md`](./references/cybersource.md) — card + tokenization (microform / Secure Acceptance) + 3-D Secure; signed-JWT (P12) auth.
 - [`references/uob.md`](./references/uob.md) — PayNow QR collection; mutual-TLS + JWS-signed requests; encrypted + signed webhooks.
 - [`references/twilio.md`](./references/twilio.md) — Twilio SMS behind the notification facade; send via a Messaging Service; status webhook (`X-Twilio-Signature`).
+- [`references/xquik.md`](./references/xquik.md) - public X data lookup/search, monitor events, and webhook delivery behind a server-side adapter.
 
 ## Verification
 - Every vendor sits **behind an interface you own** (DTOs + errors translated at the boundary);

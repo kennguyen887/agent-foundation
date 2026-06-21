@@ -1,0 +1,21 @@
+{
+  "name": "agent-foundation",
+  "owner": {
+    "name": "Ken Nguyễn",
+    "email": "ntnpro@gmail.com"
+  },
+  "description": "Engineering skills, rules, and tooling exported from a working Claude Code setup — sanitized for open source.",
+  "plugins": [
+    {
+      "name": "engineering-skills",
+      "source": "./",
+      "description": "24 reusable backend / frontend / process skills (see the repo's Skills table). Language-flexible; bodies load on demand.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ken Nguyễn",
+        "email": "ntnpro@gmail.com"
+      },
+      "homepage": "https://github.com/kennguyen887/agent-foundation"
+    }
+  ]
+}

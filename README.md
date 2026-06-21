@@ -54,6 +54,8 @@ stacks**, so they apply to any language/framework. 24 skills:
 | `integrate-identity-providers` | Third-party login + identity/KYC verification — OIDC relying-party flow (PKCE + state/nonce), token validation (JWKS / introspection), identity broker, map `(provider, subject)`→user, verified attributes (e.g. Singpass). |
 | `issue-client-sdk-credentials` | Back a client SDK that talks to a vendor directly (video/maps/chat) — mint short-lived user-scoped signed tokens (secret server-side), provider-adapter, resilient management API, session lifecycle + webhooks. |
 
+> **Step-by-step vendor recipes** ship inside these skills under `references/` (loaded on demand, so they don't add to always-on cost). Each is a concrete how-to-implement guide mapped back to the pattern: **payments** — Stripe, Rapyd, CyberSource, UOB, wallet (Apple/Google/WeChat Pay, Alipay); **identity** — Keycloak; **client SDKs** — Tencent TRTC. More added per provider.
+
 ### Frontend
 
 | Skill | What it covers |

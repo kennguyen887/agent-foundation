@@ -92,6 +92,11 @@ media-only. Principle: own the orchestration + state; let the SDK own the transp
 - Management-API credentials are separate from the signing secret; scope them minimally.
 - Don't log tokens/secrets; mask ids (see `write-service-code` §7).
 
+## Vendor recipes (step-by-step)
+Step-by-step guides for specific SDKs live in [`references/`](./references/) and load **on demand**.
+- [`references/tencent-trtc.md`](./references/tencent-trtc.md) — Tencent TRTC video: mint UserSig, provider adapter, resilient management API, room lifecycle + signalling.
+- *(more per SDK — Agora, Zoom, Mapbox, Firebase, …)*
+
 ## Verification
 - The client receives **only a short-lived, user-scoped token**; the app secret never leaves the server.
 - The vendor sits **behind your interface** (token + lifecycle), selected by config — swappable.

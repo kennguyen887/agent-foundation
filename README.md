@@ -53,7 +53,7 @@ stacks**, so they apply to any language/framework. 24 skills:
 | `integrate-external-services` | Third-party systems — anti-corruption adapter, resilient HTTP (circuit breaker + retry/backoff), outbound signing + idempotency, inbound webhooks (verify/idempotent/fast-ack), partner/public API edge, wallet payments. |
 | `integrate-identity-providers` | Third-party login + identity/KYC verification — OIDC relying-party flow (PKCE + state/nonce), token validation (JWKS / introspection), identity broker, map `(provider, subject)`→user, verified attributes (e.g. Singpass). |
 
-> **Step-by-step vendor recipes** ship inside these skills under `references/` (loaded on demand, so they don't add to always-on cost). Each is a concrete how-to-implement guide — **env keys + setup/connect steps** included — mapped back to the pattern: **payments** — Stripe, Rapyd, CyberSource, UOB, wallet (Apple/Google/WeChat Pay, Alipay); **comms** — Twilio (SMS); **identity** — Keycloak. More added per provider.
+> **Step-by-step vendor recipes** ship inside these skills under `references/` (loaded on demand, so they don't add to always-on cost). Each is a concrete how-to-implement guide — **env keys + setup/connect steps** included — mapped back to the pattern: **payments** — Stripe, Rapyd, CyberSource, UOB; **comms** — Twilio (SMS); **identity** — Keycloak. More added per provider.
 
 ### Frontend
 

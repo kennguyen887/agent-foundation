@@ -157,7 +157,6 @@ its steps mapped back to the section numbers.
 - [`references/rapyd.md`](./references/rapyd.md) — card + PayNow via Rapyd Collect; HMAC-signed requests; hosted card tokenization; webhook HMAC.
 - [`references/cybersource.md`](./references/cybersource.md) — card + tokenization (microform / Secure Acceptance) + 3-D Secure; signed-JWT (P12) auth.
 - [`references/uob.md`](./references/uob.md) — PayNow QR collection; mutual-TLS + JWS-signed requests; encrypted + signed webhooks.
-- [`references/wallet-payments.md`](./references/wallet-payments.md) — Apple/Google/WeChat Pay + Alipay; method→gateway routing; opaque-token flow; Apple merchant validation.
 - [`references/twilio.md`](./references/twilio.md) — Twilio SMS behind the notification facade; send via a Messaging Service; status webhook (`X-Twilio-Signature`).
 
 ## Verification

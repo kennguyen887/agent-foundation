@@ -33,6 +33,12 @@ verified. Never let a vendor's schema, downtime, or duplicate delivery leak into
   ```
 - **Provider selection + fallback:** choose by config/region/capability; on a provider failure, fall
   back to a secondary so one vendor's outage isn't your outage.
+- **Route by capability with a method→gateway factory.** Some methods only work on certain gateways, so
+  a factory maps **payment-method type → gateway** with precedence (feature-flag > env > default) — e.g.
+  Apple Pay / Google Pay → a gateway that accepts device-wallet tokens; WeChat Pay / Alipay → another.
+- **Device-wallet payments (Apple Pay / Google Pay):** the wallet returns an **opaque payment token** —
+  forward it to the gateway and **never touch raw card data** (PCI scope stays with the wallet +
+  gateway). Apple Pay also needs a server **merchant-validation** endpoint to start the session.
 - **Same pattern for outbound messaging** — email / SMS / push behind one `send()` facade (e.g. Twilio
   for SMS, an email provider, a push service), the channel chosen at call time; callers don't know which
   vendor delivers. (Channel content rendering — a template + data → subject/html, per locale — sits just

@@ -28,14 +28,15 @@ verified. Never let a vendor's schema, downtime, or duplicate delivery leak into
     createPayment(input: CreatePaymentInput): Promise<PaymentResult>;   // your DTOs, not the vendor's
     refund(input: RefundInput): Promise<RefundResult>;
   }
-  // providers/index.ts barrels ProviderAGateway, ProviderBGateway…; a factory picks by ProviderType
+  // providers/index.ts barrels StripeGateway, RapydGateway, CyberSourceGateway, UobGateway…; a factory picks by ProviderType
   const gateway = this.gatewayFactory.for(order.providerType);          // caller is provider-agnostic
   ```
 - **Provider selection + fallback:** choose by config/region/capability; on a provider failure, fall
   back to a secondary so one vendor's outage isn't your outage.
-- **Same pattern for outbound messaging** — email / SMS / push behind one `send()` facade, the channel
-  chosen at call time; callers don't know which vendor delivers. (Channel content rendering — a
-  template + data → subject/html, per locale — sits just before `send()`.)
+- **Same pattern for outbound messaging** — email / SMS / push behind one `send()` facade (e.g. Twilio
+  for SMS, an email provider, a push service), the channel chosen at call time; callers don't know which
+  vendor delivers. (Channel content rendering — a template + data → subject/html, per locale — sits just
+  before `send()`.)
 ▸ *Other stacks:* hexagonal **ports & adapters**; a Strategy per provider chosen by a factory.
 Principle: your interface is the contract; vendors are swappable plugins translated at the boundary.
 
@@ -77,10 +78,11 @@ is widely supported by payment/commerce APIs.
 - **Capture the RAW body** for the webhook route **before JSON parsing**, so signature verification
   runs over the exact bytes received — re-serialized JSON won't match the vendor's HMAC.
   ```ts
-  app.use('/webhooks/provider-a', express.raw({ type: 'application/json' }));   // raw, before global json parse
+  app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));   // raw bytes for Stripe's constructEvent, before global json parse
   ```
-- **Verify in a guard before the handler runs** — recompute the HMAC (or call the vendor SDK's
-  `constructEvent`) and reject on mismatch; optionally enforce a **timestamp window** (replay protection).
+- **Verify in a guard before the handler runs** — recompute the HMAC (e.g. Rapyd: HMAC over
+  `url+salt+timestamp+body`) or call the vendor SDK's verifier (e.g. Stripe's `webhooks.constructEvent`)
+  and reject on mismatch; optionally enforce a **timestamp window** (replay protection).
   ```ts
   @Injectable() export class WebhookSignatureGuard implements CanActivate {
     canActivate(ctx: ExecutionContext) {
@@ -96,7 +98,7 @@ is widely supported by payment/commerce APIs.
 - **Fast-ack-then-enqueue** — verify, hand off to a queue/command, **return 200/204 immediately**; do
   the heavy work async in a worker. A slow webhook handler triggers vendor retries (and duplicates).
   ```ts
-  @Post('/webhooks/provider-a') @UseGuards(WebhookSignatureGuard) @HttpCode(204)
+  @Post('/webhooks/stripe') @UseGuards(WebhookSignatureGuard) @HttpCode(204)
   handle(@Body() evt: VendorEvent) { return this.commandBus.execute(new EnqueueWebhookCommand(evt)); } // dispatch, don't process inline
   ```
 - **Map vendor event type → your internal event/command via a table** — don't `switch` on vendor
@@ -112,7 +114,7 @@ translate the vendor event into your own domain event.
   validate the token per request and enforce scopes**. **Map the client → an org/tenant id and inject
   it** so every downstream read/write is tenant-scoped (a partner can't reach another's data).
   ```ts
-  const claims = await this.idp.introspect(req.headers.authorization);   // delegate to the identity provider
+  const claims = await this.idp.introspect(req.headers.authorization);   // delegate to the identity provider (e.g. Keycloak introspection / JWKS)
   req.tenantId = this.clientToTenant(claims.clientId);                   // config-driven mapping
   if (!hasScope(handlerScopes, claims.scopes)) throw new ForbiddenException();
   ```

@@ -1,19 +1,41 @@
 # UOB PayNow — step-by-step integration recipe
 
-> Concrete recipe for the patterns in [`integrate-external-services`](../SKILL.md) — adapter (§1),
-> **outbound auth via mutual TLS + signed JWT** (§3), inbound webhooks with **decrypt + verify** (§4).
-> Node/TS examples; steps port to any language. This is a bank API — **verify everything against the
-> bank's current integration spec** and test in their sandbox.
+> Concrete recipe for [`integrate-external-services`](../SKILL.md) — adapter (§1), **outbound auth via
+> mutual TLS + signed JWT** (§3), webhooks with **decrypt + verify** (§4). Node/TS examples. This is a
+> bank API — **verify everything against the bank's current spec** and test in their sandbox.
 
 ## What you're building
-**PayNow** QR collection (the payer scans a QR in their banking app) + corporate refund, via the UOB
-API. Requests use **mutual TLS** + a **JWS-signed body**; webhooks arrive **encrypted and signed**.
+**PayNow** QR collection (the payer scans a QR in their banking app) + corporate refund. Requests use
+**mutual TLS** + a **JWS-signed body**; webhooks arrive **encrypted and signed**.
 
-## Prerequisites
-- Application-ID, API-Key, Client-ID, Country (header creds).
-- An **mTLS client certificate + private key** (for the TLS handshake).
-- A **signing private key** (`kid`) for the request JWS, and your RSA key pair for webhook decryption.
-- The bank's company/collection account details. All in vault.
+## Environment variables
+```bash
+UOB_BASE_URL=
+UOB_APPLICATION_ID=
+UOB_API_KEY=
+UOB_CLIENT_ID=
+UOB_COUNTRY=SG
+UOB_ACCOUNT_NUMBER=                              # your collection account
+UOB_ACCOUNT_CURRENCY=SGD
+UOB_ACCOUNT_TYPE=
+UOB_PRIVATE_KEY_BASE64=                          # JWS request-signing private key (base64 PEM)
+UOB_PRIVATE_KEY_PASSPHRASE=
+UOB_SSL_INTEGRATION_CERTIFICATE_BASE64=          # mTLS client certificate
+UOB_SSL_INTEGRATION_PRIVATE_KEY_BASE64=          # mTLS client private key
+UOB_SSL_INTEGRATION_PRIVATE_KEY_PASSPHRASE=
+UOB_IV_SIZE=12                                   # AES-GCM IV size (webhook decrypt)
+UOB_TAG_LENGTH=128                               # AES-GCM auth-tag length in bits
+UOB_ALGO_TRANSFORMATION_STRING=aes-256-gcm
+UOB_AAD_DATA=                                    # AES-GCM additional authenticated data
+PAYNOW_EXPIRATION_TIME_IN_MINUTES=30             # QR single-use validity
+```
+
+## Setup & connect
+1. **Onboard with the bank** (commercial contract). Receive `Application-ID`, `API-Key`, `Client-ID`, the API base URL, and your **collection account** details.
+2. **Exchange keys/certs**: give the bank your **mTLS client cert** + your **JWS signing public key**; the bank gives you their endpoint + a **JWKS** URL (for verifying webhook signatures) and the AES-GCM params (`IV_SIZE`, `TAG_LENGTH`, `AAD`).
+3. Base64-encode and vault all certs/keys; install `node-forge` + `node-jose` + node `https` + `crypto`.
+4. **Register your notification (webhook) URL** with the bank.
+5. Wire a `UobGateway`; load the mTLS cert/key + signing key into a keystore on boot.
 
 ## Step 1 — Auth: mutual TLS + a signed request (the distinctive part)
 Each call rides an `https.Agent` carrying the **client cert + key** (mTLS), plus header creds, plus an
@@ -25,33 +47,22 @@ const res = await axios({ method, url, headers: { 'Application-ID': appId, 'API-
 ```
 
 ## Step 2 — Create a payment = generate a PayNow QR
-There's no card. You generate a **single-use EMVCo PayNow QR** for the amount + a short expiry
-(~30 min), return it as a base64 image + instructions; the payer scans it in their bank app.
-```ts
-const qr = await this.paynow.generateBase64QRCode({ transactionRef, expiry, transactionAmount: amount });
-return { id: transactionRef, merchant_reference_id: payment.id, expiration: dayjs(expiry).unix(),
-  visual_codes: { 'PayNow QR': qr }, status: 'pending' };
-```
-`transactionRef` is derived from your payment id (e.g. base36) so you can reconcile the webhook later.
+No card. Generate a **single-use EMVCo PayNow QR** for the amount + a short expiry
+(`PAYNOW_EXPIRATION_TIME_IN_MINUTES`), return it as a base64 image; the payer scans it in their bank app.
+`transactionReference` is derived from your payment id (e.g. base36) so you can reconcile the webhook.
 
 ## Step 3 — Webhook: decrypt, THEN verify (the distinctive part)
-The notification arrives **encrypted + signed**. (1) RSA-decrypt the session key with **your** private
-key; (2) AES-GCM-decrypt the payload (IV + auth tag + AAD); (3) fetch the **bank's public key** from
-their JWKS endpoint (by `kid`) and verify the signature over the payload. Only then trust it.
-```ts
-const sessionKey = rsaDecrypt(enc.sessionKey, myPrivateKey);
-const payload = aesGcmDecrypt(enc.data, sessionKey, enc.iv, AAD, tagLen);     // decrypt
-const pubKey = await fetchBankJwks(enc.kid);
-if (!crypto.createVerify(ALG).update(payload).verify(pubKey, sig)) throw new AppError('bad signature'); // verify
-// → idempotent (dedupe by notificationId) → map to PAYMENT_COMPLETED
-```
+The notification arrives **encrypted + signed**: (1) RSA-decrypt the session key with **your** private
+key; (2) AES-GCM-decrypt the payload (IV + auth tag + `UOB_AAD_DATA`); (3) fetch the **bank's public key**
+from their JWKS (by `kid`) and verify the signature over the payload. Only then trust it → idempotent
+(dedupe by `notificationId`) → map to PAYMENT_COMPLETED.
 
 ## Step 4 — Refund
 `POST` the corporate-refund API with originator + original-credit account + amount + the original
-transaction date/time; map the response `transactionStatus.code` to your refund-completed/-rejected event.
+transaction date/time; map `transactionStatus.code` to your refund-completed/-rejected event.
 
 ## Gotchas
-- **mTLS**: the client cert/key must be installed and rotated; a handshake failure looks like a generic network error — log enough to tell them apart.
+- **mTLS**: cert/key must be installed and rotated; a handshake failure looks like a generic network error — log enough to distinguish it.
 - The QR is **single-use + expiring** — a re-scan after success is a duplicate; warn the user.
 - Webhook needs **both** decrypt **and** verify — skipping verify trusts a forgeable payload.
 - Reconcile by your `transactionReference`; the bank's id is secondary.

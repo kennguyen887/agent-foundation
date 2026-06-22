@@ -174,6 +174,19 @@ Run the project's gates (typecheck / lint / build / tests) and state the result.
 
 ---
 
+## Live Infrastructure Change Safety
+
+Changing anything on a running/deployed service — an ECS task-def env var, a scaling action, a health-check, live config — is a DEPLOY with full blast radius. Never treat it as a quick config tweak.
+
+- **Verify the actual live state FIRST.** Read the deployed value (task-def env, current revision, health-check path) before diagnosing or changing it. Never assume a value is unset / at its default — confirm it from the running environment. A wrong assumption about live state produces a wrong fix and can cause an outage. (Precedent: assumed RC relied on a schema default; it was explicitly set to a different value → wrong fix + an RC outage.)
+- **A task-def / env change rolling-restarts every task.** Before changing it, confirm the service survives a fresh restart — especially the health check: if `/health` (or the ALB probe) hard-fails on a flaky or non-critical dependency, ANY restart takes the whole service down, regardless of what you changed.
+- **Editing a deployed env via raw `aws ecs` CLI is a known AI-agent failure mode** — it has already caused an RC outage. `register-task-definition` rebuilt from a `describe-task-definition` dump drops/garbles fields, and repeated `update-service` calls trip ECS scheduler backoff. For a shared (RC/prod) env, prefer surfacing the change for a human to apply via the Console; if you must use the CLI, treat it as a deploy — verify the live value, change exactly one field, fire **one** `update-service`, and observe to convergence before any further action.
+- **One deliberate change at a time during an incident.** Do NOT churn repeated deploy / rollback / `force-new-deployment` calls — they compound state (stacked deployment records, ECS scheduler backoff) and prolong the outage. Make one corrective action, watch it fully converge, then decide.
+- **Rollback is not a guaranteed fix.** Reverting to a prior revision that shares the same image / deps won't fix an infra / dependency / health-check failure. Find the cause first.
+- **Confirm before any change to a shared (RC / prod) environment**, and for emergency recovery prefer a reversible config flip (e.g. point the ALB health check at a dependency-free liveness path) over cycling tasks. FN ECS specifics: follow the **change-ecs-service-env-safely** skill.
+
+---
+
 ## Release Safety Rules
 
 Before cutting or deploying a backend release, follow the **release-safety** skill (backward compat with the current app, test current app vs new backend, rollback plan, config/data readiness, feature flags, comment policy). Core principle: **a backend release is valid only if the current production app keeps working after it deploys.**

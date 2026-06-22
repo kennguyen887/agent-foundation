@@ -122,14 +122,11 @@ Jenkins shared library. Principle: centralize the pipeline; per-repo config is a
 branch/tag-filtered deploy jobs.
 
 ## Verification
-- The runtime image is a **separate slim stage** — no compilers/dev-deps; `docker history` shows **no
-  secrets** and no `id_rsa`/`.npmrc` in any layer.
-- Bases are **pinned** and pulled via a proxy/private registry; installs use the **lockfile**.
-- Manifest/lockfile are copied **before** source (cache); migration runs as its **own image/Job**, not in app start.
-- The repo's CI file is **thin** (variables + `include`); the pipeline runs `lint`+`test` (against real
-  service deps) **before** build/deploy.
-- Deploys are **branch-gated** to environments; migrations run **before** the app; runtime secrets are
-  **CI variables injected as env**, never baked in.
+- **No secrets / no toolchain in the runtime image:** `docker history --no-trunc <image> | grep -iE 'authtoken|id_rsa|\.npmrc|secret|password'` → empty; `docker run --rm <image> gcc --version` → "not found" (slim runner, no build toolchain); runtime image size << builder.
+- **Pinned bases via proxy, lockfile installs:** `grep -nE 'FROM .*:latest' Dockerfile` → empty (exact tags only); `grep -n 'frozen-lockfile\|npm ci' Dockerfile` present; `FROM` lines reference the dependency-proxy/registry prefix, not `docker.io` directly.
+- **Cache order + split images:** in the Dockerfile the `COPY` of the manifest+lockfile precedes `COPY . .`; the app image's `CMD` starts only the server — `grep -n 'dbm:run\|migration' Dockerfile` shows migrations are a separate image/Job, never in app start.
+- **Thin pipeline, gates before ship:** the repo CI file is basically `variables:` + one `include:` (`grep -c 'include:' .gitlab-ci.yml` = 1); the shared template runs `lint`+`test` against real service-container deps (Postgres/Redis) **before** `build`/`deploy`.
+- **Branch-gated deploys, env-injected secrets:** CI rules map `develop`→staging and tag/`master`→prod, with the migration Job gated **before** the app deploy; runtime secrets are masked CI variables injected as env (the `docker history` check above confirms none are baked into a layer).
 
 ## Related
 - `git-flow` — the branch→release flow these deploy rules mirror.

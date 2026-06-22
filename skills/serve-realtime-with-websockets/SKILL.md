@@ -101,11 +101,11 @@ critical state must also be fetchable via a normal request.
 for targeting, a shared backplane (Redis/NATS) + sticky sessions to scale**.
 
 ## Verification
-- Auth happens **once at the handshake** (middleware), identity is attached to the socket, unauthenticated connections are disconnected.
-- Emits target **rooms** (tenant/user/entity), not blind global broadcasts; tenants are isolated.
-- A **pub/sub adapter** (Redis) is wired and **sticky sessions** are configured — broadcasts work across all instances.
-- The gateway only transports: **domain events drive emits**; payloads are mapped subsets with versioned names.
-- Disconnect cleans up listeners; max-listeners is capped; clients re-auth + re-join on reconnect.
+- **Auth at handshake, not per-message:** open a socket with **no** `auth.token` → server emits `error` and disconnects (client `connected === false`); a valid token stays connected. `grep -rn "verify\|introspect" src --include='*gateway*'` finds the check in a `server.use(...)` middleware, **not** inside any `@SubscribeMessage` handler.
+- **Rooms, not global:** `grep -rn "server\.emit(" src` returns only deliberate broadcasts (≈0); targeted sends go through `.to(room).emit(...)`. Connected as tenant B, emit to tenant A's room → B receives nothing.
+- **Cross-instance backplane:** run **2** instances, one client on each, join both to a room, emit once → **both** receive it. `redis-cli PUBSUB CHANNELS "*socket.io*"` is non-empty while clients are connected; the LB/ingress has session affinity (sticky) on.
+- **Transport-only gateway:** `grep -rn "Repository\|DataSource" src --include='*gateway*'` → empty (no DB in the gateway); emits originate from `@EventsHandler` classes.
+- **Lifecycle hygiene:** `grep -n "removeAllListeners\|setMaxListeners" src` hits `handleDisconnect` + bootstrap; drop a client's network then restore → it reconnects, the middleware re-runs, and a re-emit to its room reaches it.
 
 ## Related
 - `integrate-internal-services` — the SQS/RPC events that feed the broadcasts (use-case → event → gateway emit).

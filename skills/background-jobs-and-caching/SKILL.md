@@ -90,11 +90,9 @@ jobs, idempotent handlers, drain on shutdown.
 keys, invalidate-on-write, SCAN-not-KEYS for bulk.
 
 ## Verification
-- Each job type has its own named queue with default `removeOnComplete`/`removeOnFail`; producers
-  enqueue via `@InjectQueue`, processors via `@Process`; delays are clamped ≥ 0.
-- Jobs that must not double-run are guarded by a DB-lock `runOnce`; queues `close()` on shutdown.
-- Cache reads go through `CacheService.wrap` with prefixed, stably-serialized keys; writes invalidate
-  the affected keys (all variants); bulk invalidation uses SCAN, not KEYS.
+- **One queue per job type, finished jobs evicted:** `redis-cli KEYS "bull:*"` shows a key set per queue (not one mega-queue); after a job completes `redis-cli LLEN bull:<queue>:completed` stays ~0 (`removeOnComplete`). `grep -rn "@InjectQueue\|@Process\|registerQueue" src` — producers/processors paired per queue; no `add(..., { delay: <negative> })` (clamped via `Math.max(…, 0)`).
+- **Idempotent + drains:** enqueue the same `jobId` twice → the side effect runs **once** (`SELECT count(*) FROM locking_records WHERE id='<jobId>'` = 1). `grep -rn "runOnce\|OnApplicationShutdown" src` present; SIGTERM with a job in flight → process waits, `redis-cli LLEN bull:<queue>:active` reaches 0 before exit.
+- **Cache discipline:** reads go through `cache.wrap` (`grep -rn "\.wrap(" src`); keys come from the prefix registry, no raw literals; **anti-pattern check `grep -rn "\.keys(" src` → empty** (bulk invalidation must use `scanStream`, never `KEYS`). After a mutation, `redis-cli GET "<PREFIX>:<id>"` → `nil` (invalidated, all variants).
 
 ## Related
 - `write-service-code` — §6 (SQS cross-service events; complementary) + Robustness (transactions/event handlers).

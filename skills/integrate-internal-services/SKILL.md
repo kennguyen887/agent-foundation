@@ -152,14 +152,11 @@ context at the edge, scope by tenant downstream.
 consumer. Principle: no request server, graceful drain of in-flight work, health probe only.
 
 ## Verification
-- RPC handlers return through a **shared envelope** (success + data / failure + message + statusCode);
-  pattern names are constants; the handler delegates to a bus.
-- One-to-many uses **topic → per-subscriber queue** with a registry; the producer names no subscriber.
-- Consumers **classify failures** (ack permanent, rethrow transient→DLQ) — not blanket swallow/throw;
-  a base handler owns the rule; lifecycle hooks emit observability.
-- Cross-service reads are **batched** (no per-row network calls) and **cached + event-invalidated**.
-- Calls **forward identity + correlation id**; downstream trusts the asserted header and scopes by tenant.
-- A worker app has **no business HTTP routes** and **drains in-flight work** on shutdown.
+- **Uniform RPC envelope:** every reply is `{ success, data }` or `{ success:false, message, statusCode }`, never a bare payload; `@MessagePattern` handlers delegate to a bus and pattern names are imported constants (no inline string patterns). Call a handler that throws → the caller still gets a `success:false` envelope with a `statusCode` + correlation id.
+- **Fan-out is topic→queues:** `grep -rn "broadcast\|TOPICS\." src` — the producer publishes to a topic and names **no** subscriber; the topic→queue registry lists each subscriber's own queue. Take one subscriber offline → the others still receive the event (independent queues).
+- **Consumers classify failures:** feed a malformed payload → it's logged + **ack'd** (queue depth doesn't grow); force a transient error (downstream down) → it **rethrows** and lands in the DLQ after retries. `grep -rn "DLQ\|ValidationError\|NotFoundError" src` shows the terminal-vs-retriable split in one base handler.
+- **Cross-service reads batched + cached:** id→data lookups send **all** ids in one call — no `.send(` / RPC inside a `.map(` or loop; the result goes through `cache.wrap` and an `@EventsHandler` on the owner's change event invalidates it.
+- **Context propagated, worker drains:** a downstream guard rejects a call missing `x-caller`/`x-tenant` (`401`) and the same correlation id appears in logs across hops; the worker app has no business routes (`grep -rn "@Controller" src` ≈ health only) and on SIGTERM stops intake + finishes in-flight work before exit.
 
 ## Related
 - `write-service-code` — §6 (single producer→consumer event + outbound mapped payload), §9 (client

@@ -160,15 +160,11 @@ its steps mapped back to the section numbers.
 - [`references/twilio.md`](./references/twilio.md) — Twilio SMS behind the notification facade; send via a Messaging Service; status webhook (`X-Twilio-Signature`).
 
 ## Verification
-- Every vendor sits **behind an interface you own** (DTOs + errors translated at the boundary);
-  callers pick an impl via a factory, not a vendor SDK import.
-- Outbound calls go through **one resilient client** (timeout + retry/backoff + circuit breaker +
-  fallback); signed requests use a canonical-string HMAC; mutating calls carry an idempotency key.
-- Webhooks **verify the signature over the raw body**, **dedupe by event id**, **ack fast + process
-  async**, and map the vendor event to an internal one via a table.
-- The partner edge **authenticates the client, resolves its tenant, enforces scope**, and serves a
-  versioned contract decoupled from internal models; per-client rate limit.
-- Bulk sends **tolerate partial failure** (settle-all + report) and are chunked/paced.
+- **Vendors behind your interface:** `grep -rn "from 'stripe'\|@rapyd\|cybersource\|new Twilio" src --include='*.ts' | grep -v "/providers/"` → empty (vendor SDKs live only in adapter/provider files); callers resolve an impl via the factory, typed to your own `PaymentGateway`/facade interface.
+- **One resilient outbound client:** `grep -rn "axios\.\|fetch(" src --include='*.ts' | grep -vE "http-client|resilient|breaker"` → empty (no scattered raw calls); `grep -rn "CircuitBreaker" src` present. Point a call at a dead URL → after N failures the breaker **opens** (logs `circuit open`) and calls fail fast (< the per-call timeout) instead of hanging. Mutating calls send an `Idempotency-Key`.
+- **Webhooks verify → ack-fast → async:** POST with a tampered body/signature → `400/401` (guard rejects; raw body captured — `grep -n "express.raw\|rawBody" src`); a valid one returns `204` immediately; redeliver the same vendor event id twice → the side effect runs **once**.
+- **Partner edge is scoped:** call with no/expired token → `401`; valid token but missing scope → `403`; valid → `200` and the result is the caller's tenant only (a second client can't read the first's rows).
+- **Bulk tolerates partial failure:** `grep -rn "allSettled" src` (settle-all fan-out, not `Promise.all` fail-fast); send a batch with one bad recipient → the batch completes, the failure is logged/retried, the rest succeed.
 
 ## Related
 - `integrate-internal-services` — the worker that processes the enqueued webhook job; the service mesh.

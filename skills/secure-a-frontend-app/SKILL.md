@@ -7,9 +7,8 @@ metadata:
 
 # Secure a frontend app
 
-Auth, access control, and secrets for a web app. Examples: React + Next.js (Pages Router) with
-NextAuth + an OIDC provider; neutral `listing` domain. principle → **▸ Example** → **▸ Other stacks**.
-App structure: `structure-a-frontend-app`; feature code: `write-frontend-code`.
+Auth, session, access control, and secrets for a web app. App structure: `structure-a-frontend-app`;
+feature code: `write-frontend-code`.
 
 ## 1. Auth & session
 - **OIDC via NextAuth.** Configure the provider (with PKCE/nonce checks) in the auth route; store the

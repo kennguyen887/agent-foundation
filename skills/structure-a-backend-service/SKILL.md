@@ -2,7 +2,7 @@
 name: structure-a-backend-service
 description: Use when scaffolding a backend service, adding a feature/module, or reviewing folder layout, file/class naming, DTO & entity structure, or the CQRS read/write split. Language-agnostic with TS/NestJS examples.
 metadata:
-  last-updated: 2026-06-20
+  last-updated: 2026-06-23
   author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
@@ -13,18 +13,14 @@ existing one, or **reviewing** whether code is laid out the team way. It answers
 file go", "what do I name it", "how is a feature wired", "how do reads vs writes get split", and
 "how are tests structured".
 
-This skill is about **structure, naming, and shape** (where things live, what they're called, how a
-feature is wired). It is **not** the place for do/don't policy — additive-only migrations, no
-`process.env` in business logic, HTTP-layer-only tests, backward-compat rules, etc. live in the
-**global assistant instructions** (Database & Migration Rules, Config & Environment Rules, Testing
-Rules). Those are cross-referenced inline below; follow both.
+Scope: structure, naming, and wiring — **not** do/don't policy (additive migrations, no `process.env`
+in business logic, HTTP-layer tests, backward-compat), which lives in the global instructions,
+cross-referenced inline; follow both.
 
 ## Steps
 
-Each convention is stated as a **portable principle** first, then **▸ Example (TS/NestJS)** — an
-illustrative realization to copy, **using a neutral `listing` domain** (placeholders like
-`<feature>` / `<Entity>` mark what you rename) — and where useful **▸ Other stacks** (how to honor
-the principle elsewhere). When scaffolding, walk these in order.
+Each convention: **portable principle** → **▸ Example (TS/NestJS)** (neutral `listing` domain;
+`<feature>` / `<Entity>` = rename) → **▸ Other stacks**. Walk these in order when scaffolding.
 
 ### 0. Core principle (read first)
 

@@ -8,8 +8,7 @@ metadata:
 # Schedule effective-dated changes
 
 Applying a change at a **future effective date** (plan/tier/price changes, scheduled deactivations,
-end-of-billing-cycle updates) without mutating now. Examples NestJS/TS + TypeORM, neutral domain.
-principle → **▸ Example** → **▸ Other stacks**. The Redis *delayed job* alternative (and the cron +
+end-of-billing-cycle updates) without mutating now. The Redis *delayed job* alternative (and the cron +
 overlap lock) is `background-jobs-and-caching`; transactions are `write-service-code` §9.
 
 ## Core principle

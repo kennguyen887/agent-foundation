@@ -28,19 +28,16 @@ into steps that work for the whole class; keep concrete values only as examples 
 - If the generalized version would duplicate an existing skill, update that skill instead.
 
 ## No trash skills — skip when in doubt
-Skip skill creation when: the task is genuinely one-off (exploratory questions, throwaway scripts,
-trivial edits); the workflow is already adequately covered by code comments, existing docs, or an
-existing skill; the fix is a single obvious change anyone would find from the error message alone; or
-the knowledge will be stale within weeks (tied to a temporary state, a single ticket, or one secret's
-current value). A skill that will never be opened again is noise that buries the useful ones — when
-unsure whether it clears the bar, don't create it.
+A skill that's never opened again is noise that buries the useful ones. Skip creation when:
+- The task is genuinely one-off (exploratory question, throwaway script, trivial edit).
+- It's already covered — code comments, existing docs/skill, or a CLAUDE.md / AGENTS.md rule.
+- The fix is a single obvious change anyone would find from the error message alone.
+- The knowledge goes stale within weeks (a temporary state, one ticket, one secret's current value).
+- It merely restates standard framework/library/language behavior a competent dev already knows from
+  the framework docs. Before writing, ask: "Would a competent dev know this from the docs or the
+  error?" If yes → trash; at most link or extend an existing doc.
 
-## "General" is necessary but NOT sufficient — also project-specific AND non-obvious
-Do NOT write a skill that merely restates standard framework/library/language behavior (anything a
-competent dev knows from the framework docs, or that the error message alone would reveal), or that
-duplicates something already in a CLAUDE.md / AGENTS.md. Before writing, ask: "Would a competent dev
-already know this from the framework docs or the error?" If yes → it's trash; at most link or extend
-an existing doc.
+"General" alone isn't enough — a skill must also be **project-specific AND non-obvious**.
 
 ## Pre-write self-check — kill these five weaknesses before saving
 1. **Discriminating trigger, not a symptom magnet.** The `description`/When-to-use must distinguish

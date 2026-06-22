@@ -2,7 +2,7 @@
 name: write-service-code
 description: Use when writing code inside a feature — a handler, query, service, event, or integration test. Control flow, async (Promise.all), query performance (N+1, upsert, joins, indexes), events/SQS, logging, decimal/date libs. Language-agnostic with TS/NestJS examples.
 metadata:
-  last-updated: 2026-06-20
+  last-updated: 2026-06-23
   author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
@@ -13,10 +13,9 @@ team's implementation conventions — readability, async, nullability, SQL perfo
 logging, and test shape. For *where files go and what they're named*, use the companion skill
 [structure-a-backend-service](./structure-a-backend-service.md).
 
-Examples use a neutral `listing` domain; `<Entity>`/`<feature>` are placeholders. Each rule is a
-**portable principle**, then **▸ Example (TS/NestJS)**, then **▸ Other stacks** where useful. Several
-rules restate the team's global policy so this skill is self-contained when copied to a repo that
-doesn't have those global instructions — the global rule remains the authority (see Related).
+Each rule: **portable principle** → **▸ Example (TS/NestJS)** (neutral `listing` domain;
+`<Entity>`/`<feature>` = rename) → **▸ Other stacks**. Some rules restate global policy; the global
+rule stays authoritative (see Related).
 
 ## Steps
 

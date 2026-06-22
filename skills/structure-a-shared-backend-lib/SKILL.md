@@ -8,10 +8,9 @@ metadata:
 # Structure a shared backend library
 
 A library of cross-cutting infrastructure (`@org/infra-*`) that every backend service imports, so the
-fleet is consistent and DRY. Examples NestJS/TS + TypeORM, neutral `@org` scope. principle →
-**▸ Example** → **▸ Other stacks**. This is the *where & how it's packaged*; for the framework
-primitives that live inside it see `write-cross-cutting-code` and `design-an-error-model`. The
-frontend equivalent is `structure-a-shared-ui-lib`.
+fleet is consistent and DRY. This is the *where & how it's packaged*; the framework primitives inside
+it are in `write-cross-cutting-code` and `design-an-error-model`. Frontend equivalent:
+`structure-a-shared-ui-lib`.
 
 ## When to use
 You're starting or reorganizing the shared lib behind a fleet of services, deciding which package a

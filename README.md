@@ -4,6 +4,15 @@
 
 Everything that boosts an AI coding agent — **rules, hooks, skills, MCP, and tools** — exported from a working setup and sanitized for open source.
 
+## Who this is for
+
+Backend & frontend engineers who want their AI agent to follow **consistent, production-grade
+conventions** — plus **copy-ready integration recipes** (Stripe / Rapyd / CyberSource / UOB payments,
+Singpass / Keycloak OIDC, Twilio, Docker / CI) with **real env keys + setup steps**, not generic advice.
+Every skill is **principle-first** (principle → example → other stacks), so it applies on any stack
+(NestJS, Spring, Django, Go, …), and loads **on demand** — only the one-line trigger is ever in context,
+so 28 skills cost ~nothing until one is actually used.
+
 This is meant to serve **any** AI coding agent, not one in particular. Portable capabilities live at the top level (plain-Markdown rules, portable skill folders, standard MCP JSON). Anything that only works with a specific agent lives in its own namespaced directory — today that's `claude/` (Claude Code). Other agents get sibling dirs (`cursor/`, `codex/`, …) as they're added. Adopt the whole thing or cherry-pick a piece.
 
 ## Install (run these in Claude Code)

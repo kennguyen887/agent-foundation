@@ -21,7 +21,7 @@
   "plugins": [
     {
       "id": "superpowers@claude-plugins-official",
-      "version": "6.0.2",
+      "version": "6.0.3",
       "gitCommitSha": "6efe32c9e2dd002d0c394e861e0529675d1ab32e"
     },
     {

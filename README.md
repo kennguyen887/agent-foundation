@@ -75,7 +75,7 @@ written principle-first so it ports to any language.
 
 Every skill is a portable folder with a `SKILL.md`; only the one-line `description` is always loaded
 (the trigger), and the body loads on demand. All examples follow **principle → example → other
-stacks**, so they apply to any language/framework. 27 skills:
+stacks**, so they apply to any language/framework. 28 skills:
 
 ### Backend — structure & code
 
@@ -92,6 +92,7 @@ stacks**, so they apply to any language/framework. 27 skills:
 | `use-feature-flags` | Gate rollouts on a runtime flag from a central service (scoped by service / flag / user / properties), fail-safe default-off, cached — not a `NODE_ENV` branch; flag lifecycle + removal. |
 | `render-transactional-emails` | Render emails (and PDFs) from per-locale templates (engine + CSS inliner) → subject/html/text, then dispatch via the notification facade; PDFs reuse the same render. |
 | `schedule-effective-dated-changes` | Apply a future-dated change via a pending-changes table (payload + effectiveAt + status) + a due-sweep that applies rows transactionally, snapshots history, marks done — visible/cancellable/audited; vs a Redis delayed job. |
+| `serve-realtime-with-websockets` | Push realtime updates over a WebSocket / socket.io gateway — handshake auth (once), rooms for targeted broadcast, a Redis pub/sub adapter + sticky sessions for multi-instance scaling, domain-event→room emit, reconnect/listener hygiene. |
 
 ### Backend — integration (services & third-party)
 

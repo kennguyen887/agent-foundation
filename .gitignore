@@ -1,6 +1,4 @@
 .env
 .DS_Store
 node_modules/
-
-# Local-only export tool — contains personal/internal identifiers in its scrub config; never publish.
 sync.mjs

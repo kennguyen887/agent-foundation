@@ -3,7 +3,7 @@ name: operate-ecs-services-safely
 description: Use before ANY change to a deployed container service behind a load balancer (AWS ECS/Fargate, or equivalent) — changing an env var / task-def, scaling, deploying, terminating an instance — AND when such a service is down (502/503, deploy stuck below desired, tasks failing the LB health check) or a scheduled/cron worker isn't running. A verify-before-mutate discipline + an observe→diagnose→recover playbook. Principle-first; AWS ECS commands shown, but the failure modes apply to any orchestrated container service.
 metadata:
   last-updated: 2026-06-22
-  author: Your Name <ken.nguyen@example.com>
+  author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
 ## When to use

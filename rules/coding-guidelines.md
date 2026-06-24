@@ -156,8 +156,8 @@ Run the project's gates (typecheck / lint / build / tests) and state the result.
 
 ## DRY — Parallel flows
 
-- When two flows differ only in their repos / event names / table names (e.g., bids vs offers tracks, primary vs guest signers), extract a shared helper before shipping the second one. The duplication never gets cleaned up later.
-- Shared helper shape: take a config object with `{ sourceKey, repository, signersRepository, handlers: { completed, declined, voided } }` and inject behavior. The two public methods become 5-10 lines of config + a call to the helper.
+- When two flows differ only in their repos / event names / table names (e.g., two parallel resource tracks, or primary vs secondary actors), extract a shared helper before shipping the second one — the duplication never gets cleaned up later. Before writing the second copy, search for the first; if you're about to copy-paste-and-tweak, extract first.
+- Shared helper shape: take a config object (`{ sourceKey, repository, relatedRepository, handlers: { ... } }`) and inject behavior. The two public methods become 5-10 lines of config + a call to the helper.
 - Same rule for event listeners: factory function (`registerXListener(cfg)`) over copy-pasted `events.on(...)` blocks.
 - Same rule for inline parse helpers: when you find yourself writing `(process.env.X || "").split(",").map(s => s.trim()).filter(Boolean)` in 3+ places, extract a util module — even if it's only ~10 lines.
 
@@ -183,7 +183,7 @@ Changing anything on a running/deployed service — an ECS task-def env var, a s
 - **Editing a deployed env via raw `aws ecs` CLI is a known AI-agent failure mode** — it has already caused an RC outage. `register-task-definition` rebuilt from a `describe-task-definition` dump drops/garbles fields, and repeated `update-service` calls trip ECS scheduler backoff. For a shared (RC/prod) env, prefer surfacing the change for a human to apply via the Console; if you must use the CLI, treat it as a deploy — verify the live value, change exactly one field, fire **one** `update-service`, and observe to convergence before any further action.
 - **One deliberate change at a time during an incident.** Do NOT churn repeated deploy / rollback / `force-new-deployment` calls — they compound state (stacked deployment records, ECS scheduler backoff) and prolong the outage. Make one corrective action, watch it fully converge, then decide.
 - **Rollback is not a guaranteed fix.** Reverting to a prior revision that shares the same image / deps won't fix an infra / dependency / health-check failure. Find the cause first.
-- **Confirm before any change to a shared (RC / prod) environment**, and for emergency recovery prefer a reversible config flip (e.g. point the ALB health check at a dependency-free liveness path) over cycling tasks. FN ECS specifics: follow the **change-ecs-service-env-safely** skill.
+- **Confirm before any change to a shared (RC / prod) environment**, and for emergency recovery prefer a reversible config flip (e.g. point the ALB health check at a dependency-free liveness path) over cycling tasks. FN ECS specifics: follow the **operate-ecs-services-safely** skill.
 
 ---
 
@@ -212,8 +212,12 @@ When adding/changing a migration or schema, or debugging null fields after a mig
 ## Testing Rules
 
 - Every new API endpoint MUST have at least one e2e test covering the happy path
-- Critical flows (auth, payment, lease signing) require both happy path and error path e2e tests
+- Critical flows (auth, payments, and irreversible money/contract actions) require both happy path and error path e2e tests
 - When fixing a bug caused by a staging/prod config mismatch, add a test that would have caught it
+
+### Reproduce before fixing, verify by running — not logs/tests alone
+- Before declaring a root cause, REPRODUCE the failure locally against the real code + the data it occurs on (a local server pointed at the staging DB, or a faithful fixture). If you can't reproduce it, you don't understand it yet — don't theorize from logs.
+- After fixing, VERIFY by driving the real flow to its real success state (the actual response / end artifact), not "the failing log line disappeared" or "unit tests pass". Logs and unit tests prove one layer cleared, not the end-to-end outcome — chained bugs hide behind a green layer.
 
 ### HTTP-layer testing rule
 
@@ -253,7 +257,7 @@ After creating a PR/MR, keep ownership of the change until it is verified in the
   - For RC-targeted work, verify the behavior on RC after merge/deploy.
   - For production-targeted work, verify the behavior in production after release/deploy.
 - Do not assume merge means fixed. Confirm the user-facing behavior or API response that motivated the change.
-- If verification is blocked by authentication, permissions, missing test data, or business workflow access, stop and ask the user for the specific test account, role, tenant/company, listing ID, or setup needed to continue.
+- If verification is blocked by authentication, permissions, missing test data, or business workflow access, stop and ask the user for the specific test account, role, tenant/company, record ID, or setup needed to continue.
 - Never request or store production secrets unnecessarily. Prefer staging/RC test accounts and approved access paths, and never commit credentials or log sensitive account details.
 - Report the final verification result back to the user with the environment checked, evidence gathered, and any remaining limitation.
 
@@ -261,6 +265,7 @@ After creating a PR/MR, keep ownership of the change until it is verified in the
 ## Skills (Repeatable Workflows)
 
 Project skills live in `docs/skills/` (verb-led kebab-case; trigger in frontmatter `description`).
-- **Before a task:** scan `docs/skills/` for a relevant skill; if one matches, follow it (authoritative; update in place if wrong).
-- **After a repeatable task:** create/update the matching skill, then end your response with: `✏️ Skill <created|updated>: docs/skills/<filename>.md — <reason>`.
-- **Full authoring rules** (template, naming, quality bar, pre-write self-check, when NOT to write one): use the **authoring-project-skills** skill.
+- **Before a task:** scan `docs/skills/` for a relevant skill; if one matches, follow it (authoritative; update it in place if it's wrong or now misleading).
+- **Creating a skill is the EXCEPTION, not a reflex — default to NOT creating one.** Finishing a task does not oblige you to write or touch a skill. Only create (or extend) one when **all** of these hold: it covers a *broad class* of problems (not just the one incident you hit), it's *project-specific AND non-obvious* (a competent dev wouldn't get it from the error message or the docs), and it's *not already covered* by an existing skill, a code comment, or a CLAUDE.md rule. If it would duplicate or overlap an existing skill, extend that one — cross-link, don't restate. **When in doubt, don't:** a skill nobody reopens is noise that buries the useful ones, and a near-duplicate is worse than nothing.
+- **Only when you actually create/update a skill** (per the bar above), end your response with `✏️ Skill <created|updated>: docs/skills/<filename>.md — <reason>`. No note, and no forced edit, when you correctly chose not to.
+- **Full authoring rules** (template, naming, quality bar, pre-write 5-weakness self-check, when NOT to write one): use the **authoring-project-skills** skill.

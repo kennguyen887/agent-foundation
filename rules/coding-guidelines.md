@@ -3,11 +3,11 @@
 ## Mindset & Workflow
 
 - Act as a senior dev pair-programming — not a command executor
-- If a task is ambiguous or risky: stop, ask first, do not guess scope
+- **Bias to deciding.** Act on best judgment for routine/implementation choices (fix location, branch/PR mechanics, test strategy, tooling, refactor approach, which-of-N, sync scope) and report what you did. Only **stop and ask** when it's an important business-logic / product-scope decision the user owns, or genuinely irreversible / prod-risk, that you can't resolve from the request + code + sensible defaults. When the user delegates ("pick the most reasonable / decide"), pick and execute — don't bounce a menu back.
 - If a better approach exists: say so, but follow the original request unless told otherwise
 
 ### Required workflow
-1. **Clarify** — if the task is unclear, ask at most 2 questions before starting
+1. **Clarify** — only for important-decision cases (business logic / product scope / irreversible) you can't resolve from the request + code + sensible defaults; then ≤2 questions. Otherwise pick the sensible default and proceed.
 2. **Plan** — for tasks > 30 min: list files to change and risks before writing code
 3. **Execute** — small steps, test frequently
 4. **Verify** — run tests and lint before marking done
@@ -131,6 +131,14 @@ When you hit a bug, error, or unexpected behavior, go straight to the root cause
 
 ---
 
+## Reproduce & Verify by Running — not logs/tests alone
+
+- **Reproduce before fixing.** Before declaring a root cause, recreate the failure locally against the real code + the data it occurs on (a local server pointed at the staging/RC DB, or a faithful fixture). If you can't reproduce it, you don't understand it yet — don't theorize from logs.
+- **Verify by running.** After fixing, drive the real flow to its real success state (the actual HTTP response / end artifact / observed behavior), not "the failing log line disappeared" or "unit/jest tests pass". Logs and tests prove ONE layer cleared, not the end-to-end outcome — chained bugs hide behind a green layer.
+- If local can't run the flow, fix the local setup first; don't substitute log-reading.
+
+---
+
 ## Post-Code Impact Check
 
 After finishing ANY code change — feature, fix, OR refactor — run an impact / blast-radius assessment BEFORE claiming the work is done or opening a PR. Do this proactively, without being asked. Report:
@@ -156,8 +164,8 @@ Run the project's gates (typecheck / lint / build / tests) and state the result.
 
 ## DRY — Parallel flows
 
-- When two flows differ only in their repos / event names / table names (e.g., two parallel resource tracks, or primary vs secondary actors), extract a shared helper before shipping the second one — the duplication never gets cleaned up later. Before writing the second copy, search for the first; if you're about to copy-paste-and-tweak, extract first.
-- Shared helper shape: take a config object (`{ sourceKey, repository, relatedRepository, handlers: { ... } }`) and inject behavior. The two public methods become 5-10 lines of config + a call to the helper.
+- When two flows differ only in their repos / event names / table names (e.g., two parallel resource tracks, or primary vs secondary actors sharing one flow), extract a shared helper before shipping the second one. The duplication never gets cleaned up later. **Before writing the second copy, grep the sibling (and check for an existing open PR/branch already fixing it)** — if you're about to copy-paste-and-tweak, extract the shared engine FIRST, then make both sides thin.
+- Shared helper shape: take a config object with `{ sourceKey, repository, relatedRepository, handlers: { ... } }` and inject behavior. The two public methods become 5-10 lines of config + a call to the helper.
 - Same rule for event listeners: factory function (`registerXListener(cfg)`) over copy-pasted `events.on(...)` blocks.
 - Same rule for inline parse helpers: when you find yourself writing `(process.env.X || "").split(",").map(s => s.trim()).filter(Boolean)` in 3+ places, extract a util module — even if it's only ~10 lines.
 
@@ -212,12 +220,8 @@ When adding/changing a migration or schema, or debugging null fields after a mig
 ## Testing Rules
 
 - Every new API endpoint MUST have at least one e2e test covering the happy path
-- Critical flows (auth, payments, and irreversible money/contract actions) require both happy path and error path e2e tests
+- Critical flows (auth, payments, irreversible money/contract actions) require both happy path and error path e2e tests
 - When fixing a bug caused by a staging/prod config mismatch, add a test that would have caught it
-
-### Reproduce before fixing, verify by running — not logs/tests alone
-- Before declaring a root cause, REPRODUCE the failure locally against the real code + the data it occurs on (a local server pointed at the staging DB, or a faithful fixture). If you can't reproduce it, you don't understand it yet — don't theorize from logs.
-- After fixing, VERIFY by driving the real flow to its real success state (the actual response / end artifact), not "the failing log line disappeared" or "unit tests pass". Logs and unit tests prove one layer cleared, not the end-to-end outcome — chained bugs hide behind a green layer.
 
 ### HTTP-layer testing rule
 

@@ -3,11 +3,11 @@
 ## Mindset & Workflow
 
 - Act as a senior dev pair-programming — not a command executor
-- **Bias to deciding.** Act on best judgment for routine/implementation choices (fix location, branch/PR mechanics, test strategy, tooling, refactor approach, which-of-N, sync scope) and report what you did. Only **stop and ask** when it's an important business-logic / product-scope decision the user owns, or genuinely irreversible / prod-risk, that you can't resolve from the request + code + sensible defaults. When the user delegates ("pick the most reasonable / decide"), pick and execute — don't bounce a menu back.
+- **Bias to deciding — got a recommendation? take it, don't ask.** Act on best judgment for routine/implementation choices (fix location, branch/PR mechanics, test strategy, tooling, refactor approach, which-of-N, sync scope), and for any confirmation/choice (`AskUserQuestion` or inline) where you've settled on a recommended option: pick it, proceed, report what you chose — you'll correct course if wrong; never bounce a menu back (esp. when told "pick the most reasonable / decide"). **Ask only** when you've no clear recommendation on a call the user genuinely owns (business logic / product scope) you can't resolve from request + code + sensible defaults. **Exception:** genuinely irreversible / prod-risk / outward-facing actions still need explicit OK — there your recommendation is a proposed plan, not a green light.
 - If a better approach exists: say so, but follow the original request unless told otherwise
 
 ### Required workflow
-1. **Clarify** — only for important-decision cases (business logic / product scope / irreversible) you can't resolve from the request + code + sensible defaults; then ≤2 questions. Otherwise pick the sensible default and proceed.
+1. **Clarify** — only in the "Ask only when…" case above; then ≤2 questions. Otherwise pick the sensible default and proceed.
 2. **Plan** — for tasks > 30 min: list files to change and risks before writing code
 3. **Execute** — small steps, test frequently
 4. **Verify** — run tests and lint before marking done

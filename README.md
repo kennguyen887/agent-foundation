@@ -11,7 +11,7 @@ conventions** — plus **copy-ready integration recipes** (Stripe / Rapyd / Cybe
 Singpass / Keycloak OIDC, Twilio, Docker / CI) with **real env keys + setup steps**, not generic advice.
 Every skill is **principle-first** (principle → example → other stacks), so it applies on any stack
 (NestJS, Spring, Django, Go, …), and loads **on demand** — only the one-line trigger is ever in context,
-so 28 skills cost ~nothing until one is actually used.
+so 32 skills cost ~nothing until one is actually used.
 
 This is meant to serve **any** AI coding agent, not one in particular. Portable capabilities live at the top level (plain-Markdown rules, portable skill folders, standard MCP JSON). Anything that only works with a specific agent lives in its own namespaced directory — today that's `claude/` (Claude Code). Other agents get sibling dirs (`cursor/`, `codex/`, …) as they're added. Adopt the whole thing or cherry-pick a piece.
 
@@ -84,7 +84,7 @@ written principle-first so it ports to any language.
 
 Every skill is a portable folder with a `SKILL.md`; only the one-line `description` is always loaded
 (the trigger), and the body loads on demand. All examples follow **principle → example → other
-stacks**, so they apply to any language/framework. 28 skills:
+stacks**, so they apply to any language/framework. 32 skills:
 
 ### Backend — structure & code
 
@@ -102,6 +102,7 @@ stacks**, so they apply to any language/framework. 28 skills:
 | `render-transactional-emails` | Render emails (and PDFs) from per-locale templates (engine + CSS inliner) → subject/html/text, then dispatch via the notification facade; PDFs reuse the same render. |
 | `schedule-effective-dated-changes` | Apply a future-dated change via a pending-changes table (payload + effectiveAt + status) + a due-sweep that applies rows transactionally, snapshots history, marks done — visible/cancellable/audited; vs a Redis delayed job. |
 | `serve-realtime-with-websockets` | Push realtime updates over a WebSocket / socket.io gateway — handshake auth (once), rooms for targeted broadcast, a Redis pub/sub adapter + sticky sessions for multi-instance scaling, domain-event→room emit, reconnect/listener hygiene. |
+| `keep-service-memory-lean` | Keep per-process RSS lean — lazy-load cold-path / heavy dependencies, treat a memory regression as a code smell to hunt (not "add more RAM"); covers the reservation-vs-RSS + deploy-2x-surge mechanism behind OOM outages on memory-tight replicas. |
 
 ### Backend — integration (services & third-party)
 
@@ -131,6 +132,9 @@ stacks**, so they apply to any language/framework. 28 skills:
 | `code-conventions` | General style — naming, file/function size, array functions, early return, SOLID/KISS, magic numbers, casts, TS gotchas. Also indexes the full convention set. |
 | `git-flow` | Branching & release — develop→staging→master flow, tagging, semantic versioning, hotfix path. Tool-agnostic (plain git). |
 | `containerize-and-ship-a-service` | Docker + CI/CD — multi-stage build (slim runtime), base via dependency proxy, build-time creds scrubbed before the final stage, lockfile-first caching, app/migration/test images, thin per-repo pipeline including a shared template, branch→env deploys + secrets via CI vars. |
+| `operate-ecs-services-safely` | Before any change to a deployed container service behind a load balancer (ECS/Fargate or equivalent) — a verify-before-mutate discipline + an observe→diagnose→recover playbook for outages, stuck deploys, and tasks failing the health check. |
+| `tdd-http-first` | Drive a feature/bugfix test-first where the project mandates HTTP-layer-only testing — the failing RED test must be an HTTP / route-harness test (e.g. supertest), never a service/validator/util unit test. |
+| `prevent-secret-and-pii-leaks` | Before committing/pushing/publishing to a public or shared destination — avoid leaking secrets, PII, or internal identifiers; plus the remediation playbook if something already leaked (untrack → rewrite history → force-push → rotate). |
 
 ### Rules (extracted from the global guidelines)
 
@@ -148,7 +152,7 @@ stacks**, so they apply to any language/framework. 28 skills:
 
 ## Why plugins aren't vendored
 
-Most installed capabilities (the `gsd-*` skills/agents/hooks from get-shit-done, plus the `superpowers` / `ecc` / `compound-engineering` / `warp` plugins) come from public marketplaces. Copying their source here would republish other people's code under this repo's license and go stale on every upstream update. Instead, `plugins/manifest.json` records exactly what to install and `bootstrap.sh` reinstalls it. Only first-party, authored content is vendored.
+Most installed capabilities (the `gsd-*` skills/agents/hooks from get-shit-done, plus the `ecc` / `compound-engineering` / `warp` plugins) come from public marketplaces. Copying their source here would republish other people's code under this repo's license and go stale on every upstream update. Instead, `plugins/manifest.json` records exactly what to install and `bootstrap.sh` reinstalls it. Only first-party, authored content is vendored.
 
 ## Community / marketplace skills (referenced, not vendored)
 
@@ -159,7 +163,6 @@ below with where to reinstall them on a new machine. They stay in your local `~/
 | Skill(s) | Source | Reinstall |
 |---|---|---|
 | `ask-matt`, `codebase-design`, `diagnosing-bugs`, `domain-modeling`, `prototype`, `to-prd`, `triage`, `to-issues`, `implement`, `grill-with-docs`, `improve-codebase-architecture`, `git-guardrails-claude-code`, `setup-pre-commit`, `setup-matt-pocock-skills` | **Matt Pocock** — <https://github.com/mattpocock/skills> | clone the repo and copy the folders into `~/.claude/skills/`, or run the `setup-matt-pocock-skills` skill (which installs the rest) |
-| `resolving-merge-conflicts` | **superpowers** plugin (`claude-plugins-official` marketplace) | comes with the `superpowers` plugin — see `claude/plugins.json` + `claude/bootstrap.sh` |
 | `stop-slop` | **Hardik Pandya** — <https://hvpandya.com> | copy into `~/.claude/skills/` |
 | `sentry-cli` | **Sentry** CLI guide (sentry plugin/integration) | reinstall from the Sentry skill source |
 | `caveman`, `zoom-out` | community (source not recorded) | locate in your marketplace/skill source and copy into `~/.claude/skills/` |

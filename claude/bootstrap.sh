@@ -19,13 +19,11 @@ echo "==> Installing portable skills + Claude hooks"
 [ -d "${HERE}/hooks" ]  && cp -R "${HERE}/hooks/."  "${CLAUDE_DIR}/hooks/"  || true
 
 echo "==> Adding plugin marketplaces"
-claude plugin marketplace add "anthropics/claude-plugins-official"   # claude-plugins-official
 claude plugin marketplace add "https://github.com/affaan-m/ECC.git"   # ecc
 claude plugin marketplace add "EveryInc/compound-engineering-plugin"   # compound-engineering-plugin
 claude plugin marketplace add "warpdotdev/claude-code-warp"   # claude-code-warp
 
 echo "==> Installing plugins"
-claude plugin install "superpowers@claude-plugins-official"
 claude plugin install "warp@claude-code-warp"
 
 echo "==> MCP servers: copy mcp/servers.json into your client and supply env vars"

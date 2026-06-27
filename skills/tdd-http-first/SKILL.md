@@ -13,7 +13,7 @@ You are about to implement or change endpoint behavior — a new route, a new re
 This skill exists because of a **collision**: the generic test-driven loop's reflex is "write a failing **unit** test first," but the HTTP-layer-only rule forbids exactly that. So here, RED = a failing **HTTP-layer** test. A fresh assistant doing "TDD" will reach for a unit test and violate the rule — that is the mistake this skill prevents.
 
 Division of labor:
-- **The loop discipline itself** (one behavior at a time, watch it fail for the *right* reason, write the *minimal* code to go green, then refactor) → defer to the `superpowers:test-driven-development` skill. Don't restate it.
+- **The loop discipline itself** (one behavior at a time, watch it fail for the *right* reason, write the *minimal* code to go green, then refactor) → the standard TDD RED/GREEN/REFACTOR discipline. Apply it; this skill doesn't restate it.
 - **Binding that loop to the HTTP-layer-only rule** (where the RED test lives, what counts as a real RED, the escape hatch) → this skill.
 
 ## Steps
@@ -61,6 +61,6 @@ NODE_OPTIONS=--experimental-vm-modules npx jest --runInBand tests/app/http/<name
 - Lint clean on the changed files.
 
 ## Related
-- `superpowers:test-driven-development` — the generic RED/GREEN/REFACTOR loop this adapts; invoke it for the discipline, then apply these constraints. **Same goal, but it defaults to unit tests — this skill overrides that wherever HTTP-layer-only testing is mandated.**
+- **The generic TDD RED/GREEN/REFACTOR loop** this adapts — apply that discipline, then layer on these constraints. **The standard loop defaults to unit tests; this skill overrides that wherever HTTP-layer-only testing is mandated.**
 - Global `~/.claude/CLAUDE.md` → "HTTP-layer testing rule" — the authoritative no-unit-tests rule this operationalizes.
 - In listings-api: the `author-lean-http-tests` project skill (WHERE the test goes + HOW MANY cases) and `add-flag-gated-endpoint-group` (fuller `buildTestApp` harness reference).

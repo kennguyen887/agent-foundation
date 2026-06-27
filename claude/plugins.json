@@ -2,10 +2,6 @@
   "note": "Reference only. Reproduce with bootstrap.sh — third-party plugin source is NOT vendored here.",
   "marketplaces": [
     {
-      "name": "claude-plugins-official",
-      "source": "github"
-    },
-    {
       "name": "ecc",
       "source": "git"
     },
@@ -19,11 +15,6 @@
     }
   ],
   "plugins": [
-    {
-      "id": "superpowers@claude-plugins-official",
-      "version": "6.0.3",
-      "gitCommitSha": "6efe32c9e2dd002d0c394e861e0529675d1ab32e"
-    },
     {
       "id": "warp@claude-code-warp",
       "version": "2.1.0",

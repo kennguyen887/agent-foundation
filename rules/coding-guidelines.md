@@ -7,7 +7,7 @@
 - If a better approach exists: say so, but follow the original request unless told otherwise
 
 ### Required workflow
-1. **Clarify** — only in the "Ask only when…" case above; then ≤2 questions. Otherwise pick the sensible default and proceed.
+1. **Clarify** — only in the "Ask only when…" case above, ≤2 questions; otherwise proceed.
 2. **Plan** — for tasks > 30 min: list files to change and risks before writing code
 3. **Execute** — small steps, test frequently
 4. **Verify** — run tests and lint before marking done
@@ -16,6 +16,7 @@
 A task is only done when:
 - [ ] Tests pass
 - [ ] Lint is clean
+- [ ] App boots cleanly via the real dev runner AND the health/readiness endpoint returns 200 (see "Boot + health before any PR/push" below) — tests alone are NOT enough
 - [ ] No debug logs remaining (`console.log`, `print`)
 - [ ] New env vars added to `.env.example` and config schema
 - [ ] Migration (if any) runs clean on a fresh DB
@@ -136,6 +137,7 @@ When you hit a bug, error, or unexpected behavior, go straight to the root cause
 - **Reproduce before fixing.** Before declaring a root cause, recreate the failure locally against the real code + the data it occurs on (a local server pointed at the staging/RC DB, or a faithful fixture). If you can't reproduce it, you don't understand it yet — don't theorize from logs.
 - **Verify by running.** After fixing, drive the real flow to its real success state (the actual HTTP response / end artifact / observed behavior), not "the failing log line disappeared" or "unit/jest tests pass". Logs and tests prove ONE layer cleared, not the end-to-end outcome — chained bugs hide behind a green layer.
 - If local can't run the flow, fix the local setup first; don't substitute log-reading.
+- **Boot + health before any PR/push (HARD GATE).** Tests passing is NOT sufficient to prepare a PR, push, or call a change done. First: (1) start the project's REAL dev runner (`start:dev` or its equivalent — detect it from `package.json`/runner config; do NOT assume `node <file>`, e.g. a TS project usually needs its `tsx`/`ts-node` loader and plain `node` throws `ERR_MODULE_NOT_FOUND`), and confirm the startup logs are clean (no crash / module-resolution / unexpected error, and the server logs it's listening); (2) hit the health/readiness endpoint and require success (HTTP 200, not 503/degraded). Only then is the change PR-eligible. WHY: mocked unit/jest tests pass even when the real app can't boot or its health check fails; and a deploy's load-balancer probe typically gates on `GET /health == 200`, so a 503 (e.g. a flaky/degraded dependency) makes every fresh task fail the probe and the orchestrator kills the whole service on the next restart — a green-tested change has caused a full RC outage exactly this way. If `/health` is 503 only from a local-env gap (missing local creds), confirm the change didn't introduce it AND that it won't 503 on the deployed env either. Bring up local infra first if the runner needs it.
 
 ---
 
@@ -254,7 +256,7 @@ Before finishing any task, confirm:
 
 After creating a PR/MR, keep ownership of the change until it is verified in the target environment.
 
-- Immediately after opening a PR/MR, draft a ready-to-paste Slack message inviting the team to review: in English, short — the PR link plus one or two lines of context (what it changes, why, any urgency). No headers, no emoji walls, no long bullet lists.
+- **Slack: prepare, don't send.** Never post to Slack (or any external/team channel) on your own initiative — including after a PR, merge, finished task, or incident. Draft the message in chat for the user (English, short: PR link + a line or two of context; no headers, emoji walls, or long bullet lists) and send it via the send-slack skill only when they explicitly ask.
 - Monitor the PR/MR checks and review status after opening it.
 - If CI fails, inspect the failing job, fix the issue on the same branch, push the update, and continue monitoring.
 - After the PR/MR is merged, verify that the fix is actually present in the target branch and deployed environment:

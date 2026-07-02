@@ -36,6 +36,13 @@ aws elbv2 describe-target-health --target-group-arn $TG --query 'TargetHealthDes
 aws logs get-log-events --log-group-name <log-group> --log-stream-name <stream/taskId> --start-from-head --limit 100 --query 'events[].message' --output text
 aws ecs describe-container-instances --cluster <cluster> --container-instances <ci-arn> \
   --query 'containerInstances[].{agent:agentConnected,running:runningTasksCount,remMem:remainingResources[?name==`MEMORY`].integerValue|[0]}'
+# WHICH container is eating the host? Host CPUUtilization (AWS/EC2) says the box is saturated, NOT by what.
+# Per-task/service consumer (emitted only while the agent is connected — see blind-spot note):
+aws cloudwatch get-metric-statistics --namespace ECS/ContainerInsights --metric-name CpuUtilized \
+  --dimensions Name=ClusterName,Value=<cluster> Name=ServiceName,Value=<service> \
+  --start-time <ISO> --end-time <ISO> --period 300 --statistics Average Maximum \
+  --query 'sort_by(Datapoints,&Timestamp)[].{t:Timestamp,avg:Average,max:Maximum}' --output text
+# swap MetricName=MemoryUtilized for the memory-leak / GC-spiral signature (growing vs flat)
 ```
 
 Interpret:
@@ -44,6 +51,8 @@ Interpret:
 - Many deployment records / `deps > 1` = prior churn.
 - In boot logs: an app-ready line (e.g. `listening on port`) **plus** health-check dependency errors = the app is up but the health probe 503s on a dependency (the most common killer). Only a boot banner with no ready line = it hung before serving.
 - `agentConnected = false` on a host = it can't place tasks (restart the agent or replace the host).
+- **100% host CPU / OOM → isolate the consumer by measurement, never guess.** Host `CPUUtilization` (AWS/EC2) only says the box is saturated; pull per-task/service `ECS/ContainerInsights` `CpuUtilized`/`MemoryUtilized` to see WHICH container ate it and whether memory grew (leak / GC-spiral) or stayed flat. A worker that merely logged errors near the outage is a *suspect* — confirm with the per-task metric before attributing the cause or shipping a fix.
+- **Blind spot:** when the host saturates, the agent disconnects and per-task Container Insights metrics **stop at that instant**. The pre-disconnect window is your evidence; treat the post-disconnect 100%-CPU window as **undetermined** (consumer not observable), not as confirmation of whatever you suspected. Precedent (2026-06-30): a scheduler was confidently blamed for a CPU outage; per-task metrics showed it idle (~2–5 CPU units, flat mem), and the sustained-CPU window was unobservable — so "undetermined" was the honest call, not the scheduler.
 
 ## Recovery — match the cause (one action, observe, never churn)
 

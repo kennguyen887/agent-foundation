@@ -36,6 +36,16 @@ Be honest and specific, not vague. This is the senior-dev pair-programmer stance
 
 ---
 
+## Communication — lead with the answer, cut filler
+
+- **Answer first (BLUF), detail after.** Open with the conclusion / decision / result; put reasoning, caveats, and evidence below it. Don't make the user read to the end to find the point.
+- **Match length to stakes.** A trivial/routine answer is 1–3 lines. Reserve long form for genuinely complex or risky work. When unsure, ship shorter — the user can ask for more.
+- **No filler, no flattery.** Skip preamble ("Great question!"), restating the prompt, and narrating options I won't pursue. Every line must carry information the user doesn't already have.
+- **Say "I was wrong" plainly** when corrected with good reason — no defensive re-justifying. Update and move on.
+- **Match the user's language** (they write Vietnamese → answer Vietnamese) and their brevity.
+
+---
+
 ## PR Review Comment Rules
 
 When asked to review a PR and post comments:
@@ -68,6 +78,7 @@ When asked to review a PR and post comments:
 
 - NEVER add AI attribution to commit messages — no `Co-Authored-By`, no AI model names, no `Generated with` lines
 - Commit messages must contain only the subject line and optional body describing the change
+- **Shared checkouts shift under you — verify the branch atomically with the commit.** Multiple agent sessions often share one checkout (listings-api2 etc.); another session can `git checkout` its own branch between your edit and your commit, so your commit lands on THEIR branch and swallows THEIR staged changes. Either assert the branch in the SAME compound command (`[ "$(git branch --show-current)" = my-branch ] && git add <files> && git commit …` — and `git add` explicit paths, never `-A`), or better, do branch+edit+commit inside a private `git worktree add` (symlink `node_modules` + copy `.env` to run tests/boot there). Recovery if it happens: save your file blob from the bad commit, `git reset --soft HEAD~1`, `git restore --staged --worktree <your files>` — the other session's staged work stays intact. (Precedent 2026-07-02 on listings-api2.)
 
 ---
 
@@ -115,6 +126,18 @@ A bug fix is NOT done when the one reported instance works. It is done when the 
 
 Precedent (do not repeat): a HubSpot signUp Forms submit was missing a REQUIRED field. It was fixed at ONE caller (`createUserProfiles`) and shipped as "done" — but the identical omission existed at `updateProfile`, plus an empty-value variant at `deleteProfile`/registration. It took multiple rounds, with the user pointing it out twice, because the first fix patched one site instead of (a) grepping all `submitContactForm('signUp')` callers and (b) adding a central required-field guard in the shared submit function. That sweep + central guard should have been the FIRST fix. (Ties into **DRY — Parallel flows** and **Post-Code Impact Check**: apply them proactively on every bug fix, not only when asked.)
 
+### Nullable data crossing a service boundary: read the consumer's REAL failure mode, then fix the consumer to tolerate — never gate the producer
+
+When a field in a cross-service payload (domain event, webhook, internal API call) can be null/missing and the downstream consumer "looks like it can't handle it":
+
+- **Do NOT state the blast radius from the first dereference you spot.** Spotting `agent.email` in the consumer is a *suspicion*, not a conclusion. Read the consumer's full code path and trace what ACTUALLY happens on the bad input: JS argument-evaluation order (calls invoked *before* the throwing expression still fire — an email already dispatched survives the throw), provider-internal try/catch (a mailer/messenger that catches its own errors turns "crash" into "logged skip"), process-level handlers (`@sentry/node`'s default `unhandledRejection` handler keeps Node ≥15 alive where bare Node would exit), and whether the event bus even holds async listener promises (EventEmitter/EventEmitter2 drop them → floating rejection, not a request failure). The honest blast radius is "which side effects are lost, which survive" — derived from that trace. An overstated "it will crash downstream" justifies a worse fix.
+- **Fix direction: make the CONSUMER tolerate the nullable field BY DESIGN; keep the producer always sending.** Guard the optional branch (skip the agent email when there is no agent), fall back sensibly (main domain for links when no company), and harden the shared provider at the choke point (`const {...} = user || {}` inside the sync helper protects every caller, present and future). Producer-side gating (`if (agent && company) send(...)`, or skip-with-warn) "protects" the consumer by silently dropping the ENTIRE payload — every recipient, every side effect — a bigger functional loss than the partial failure it prevents. Fix for pass, don't dead-block.
+- **The producer may skip only when NO meaningful payload can be built at all** — and must warn loudly when it does.
+- **Merge/deploy order: consumer-tolerance first** (purely additive, safe standalone), producer change second — state this in both PRs.
+- **Pin the contract with a test that drives the REAL consumer code** — real listener + real provider with only the transport stubbed — one case per nullable combination, RED-verified against the old code.
+
+Precedent (bidder::new, 2026-07): a `bidder::new` handler crashed on manager-less listings. Round 1 shipped `agent: null` + a legacy guard but HARD-GATED the send when `company` was null — dropping the farmer confirmation email with it. Challenged with "check the legacy code, don't conclude hastily", the actual trace showed the earlier "null agent would just move the crash downstream" claim was overstated (the farmer email survived via evaluation order + CustomerIo's internal catch + Sentry's rejection handler; only the user-sync calls were lost). Final shape (listings-api#631 + legacy-api#375): legacy tolerates `agent: null` AND `company: null` (MAIN_DOMAIN link fallback + hardened `CustomerIo.updateUser`), and the producer always sends. (Ties into **Reasoning Rigor — GROUND-TRUTH first**: the consumer's source is the ground truth for a cross-service contract, same as the DB is for data.)
+
 ---
 
 ## Solution Confidence Rating
@@ -144,6 +167,7 @@ I have shipped shallow, partial, premature fixes that only got completed because
 
 **Before fixing — understand the whole problem, not the reported symptom:**
 - **GROUND-TRUTH the actual state of the system that shows the symptom — FIRST, before theorizing or proposing any fix.** If the report is "value/field/record X is wrong or missing in system Y" (HubSpot, the DB, a third-party API, the deployed env), your FIRST action is to READ Y's real current state — the actual record, the actual property/config, the actual value — via its API / query / console. Do NOT infer Y's contents from code, logs, or the user's wording and then build a fix on that inference. One authoritative read collapses a dozen speculative rounds. Until you've seen the real state, every "root cause" is a hypothesis — do not ship, or even propose with confidence, a fix for it. If you can't read Y (missing creds/access, /proc blocked, no account), that access gap IS the first blocker to clear (fetch the secret read-only, use the API, ask for the data) — never substitute a guess. And don't let your diagnosis flip-flop as data trickles in: get the authoritative data, THEN commit to one diagnosis.
+- **LOGS FIRST, code second — pull the runtime logs for the failing flow BEFORE deep-diving the code.** When a bug report names a request/entity/time ("user X did Y and it failed"), your first move after (or alongside) the ground-truth read is ONE targeted log query (CloudWatch/Sentry/service logs filtered on the entity id / route around the report time) — NOT a route→controller→service code-reading crawl. The logs tell you which branch actually ran, what returned 200 vs threw, and exactly where the flow stopped; then read ONLY the code the logs point at. Head-down code exploration before logs burns tokens/time re-deriving what the logs state outright, and risks "fixing" a path that demonstrably worked. Skim just enough code to learn the log tags/entity ids to grep for (minutes), then go straight to logs. (Precedent: DocuSign "can't access signing URL" — long route→controller→service→SigningFlow code crawl first; one log query then showed all 5 sign attempts logged `200 minted signing URL`, i.e. the BE worked and the failure was client-side (iframe frame-ancestors). Logs-first would have halved the investigation.)
 - **Establish the baseline/history FIRST.** Did this ever work? When and why did it break? Get it from git log/blame, the introducing change, and telemetry *over time* (e.g. a CloudWatch trend, not a spot check). "It's still broken" is not a starting point; "it has failed ~50% since Dec 2024" is. A fix built without the baseline is a guess. Explicitly ask "why now / what changed" before assuming it's new.
 - **Find every instance of the class,** not just the reported one — grep all sibling call sites / callers / payload builders (see "Fix the whole bug CLASS in one pass").
 - **Name the invariant being violated** and fix it at the choke point, not the one symptom.
@@ -171,6 +195,20 @@ When you hit a bug, error, or unexpected behavior, go straight to the root cause
 - **Patch-first is allowed ONLY as an explicit hotfix** to stop active breakage — and only if you immediately flag the root cause and track the root fix as a follow-up.
 - **For resource/performance incidents (CPU, memory, latency, connections, disk), isolate the consuming component by direct measurement before naming a cause.** Pull per-process / per-task metrics (e.g. ECS/ContainerInsights `CpuUtilized`/`MemoryUtilized`, profiles, heap snapshots) or reproduce the mechanism — do NOT infer the culprit from a log correlation or a symptom-consistent story. A component that merely logged errors near the outage is a *suspect*, not the cause. If telemetry has a blind spot (e.g. the agent disconnected so per-task metrics stop), say "undetermined" for that window instead of filling it with a narrative. Worked example (do not repeat): a 100%-CPU host outage was confidently blamed on a scheduler cron pile-up and an "8.5/10" was attached; per-task Container Insights then showed the scheduler **idle** (~2–5 CPU units, flat memory) — the story was wrong, and querying the per-task metric *first* would have caught it before any fix or claim.
 - Worked example of the trap: an SSR "window is not defined" crash was first patched with a `typeof window` guard; the real root was a shared client/server service running browser-only auth recovery during SSR *and* holding per-request state in static fields — and one level deeper, an auth check that should not have been in `getServerSideProps` at all. Each layer only surfaced because someone pushed past the previous patch. Go there first.
+
+---
+
+## Fix at the Smartest Layer — propose the layer choice BEFORE writing code
+
+Code is only one of several layers that can fix a bug, and often not the cheapest. Don't default to a code fix because code is what an agent is best at producing. Before implementing any fix, run a quick **fix-layer scan**, and when more than one layer could plausibly solve the problem, PRESENT the options + a recommendation to the user and get their pick BEFORE writing the code — not in the wrap-up report after PRs are already open.
+
+- **Layers to scan, cheapest first:** config/env value (Secrets Manager, task-def env, CI variable, dashboard/console setting) → vendor/third-party setting → data fix / one-off script → an existing mechanism that already covers it (retry, self-heal diff, existing helper — see Lean Design) → infra (ALB rule, redirect, DNS, header) → code change.
+- **Ground-truth the layer before proposing it** (ties into GROUND-TRUTH first): read the actual config/secret/task-def and confirm it carries the bad state before proposing to change it — and equally, before writing code, confirm a one-line config edit would NOT already solve it. Don't code around a value that is one console edit away from correct, and don't propose "fix the env" without having read the env.
+- **Config fix cures the instance; code hardening kills the class.** If the bad value can recur (any env/laptop can reintroduce it), the honest proposal is usually a PAIR — "config fix now + small code guard" — presented as such with effort/blast-radius per option, letting the user drop one.
+- **The presentation is one short block, not a menu of shrugs:** each viable layer, one line (what changes, effort, whether it kills instance or class), then a clear recommendation. If code is genuinely the only viable layer, say that explicitly WITH the evidence that ruled the others out ("task-def env is empty, all secrets clean, source is local .env files → nothing in AWS to fix") and proceed.
+- This narrows, not contradicts, **Bias to deciding**: implementation details remain mine to decide without asking; the *fix layer* is a scope call the user co-owns when a materially cheaper non-code path might exist.
+- **"Config cures the instance, code kills the class" is NOT an automatic win for code** — size it to severity per [KISS]. Low-severity, self-correcting, local-only → the lean config/note path may rightly beat a code guard; don't ship the code-hardening PR assuming killing the class always wins.
+- Precedent (2026-07-03, `//pusher/auth` 404s): expectation was "remove the extra slash in the ECS env and done". Investigation correctly ruled the config-at-AWS layer out (task-def env empty, every Secrets Manager value clean, committed `.env.sample`/`.env.example` clean too) — the bad slash lived ONLY in developers' local `.env` files, so there was no repo/AWS artifact to fix; "fix env values" meant asking each dev to fix their laptop. I opened two code-normalization PRs (env-read `trimTrailingSlashes` in both FE repos) before ever showing the layer comparison, and the user pushed back twice ("wasn't fixing the ECS env enough?", then "just fix the env values, trimTrailingSlashes is clutter"). Both were right: (1) the layer scan + recommendation should have been message ONE, before any code; (2) for a local-dev-only, self-correcting 404 (~20 reqs/14 days, dev's own realtime breaks so they notice), the lean path — close the PRs, tell the team to strip the trailing slash from local `.env` — beat the code guard. Ended by closing both PRs.
 
 ---
 
@@ -256,6 +294,36 @@ Before cutting or deploying a backend release, follow the **release-safety** ski
 
 When adding/changing a migration or schema, or debugging null fields after a migration, follow the **database-migrations** skill. Always-on guardrails: **never alter schema manually (always a migration); migrations are immutable once merged + reversible (up/down); push row filters into SQL WHERE — don't fetch broadly then filter in code.**
 
+### Transactions & ACID (app-level)
+
+**Atomicity**
+- Any operation with 2+ dependent writes (multi-table insert/update/delete, or a write + status/counter bump) MUST run in ONE DB transaction — all commit or all roll back; a mid-sequence failure must never leave partial state.
+- Every query inside must actually USE the trx (knex: `.transacting(trx)` / pass trx into the repository/helper). A helper that silently uses the base connection escapes the transaction — that's a bug, not a style issue.
+- NEVER put external calls (HTTP, Stripe, DocuSign, HubSpot, email, events) inside a transaction — they can't roll back and they hold locks/connections open. Commit first, then fire side effects.
+
+**Consistency**
+- Enforce invariants in the SCHEMA, not only in app code: NOT NULL, UNIQUE, FK, enum. App-level "check then insert" cannot guarantee uniqueness under concurrency — a DB unique index can. Map the constraint-violation error to the proper 4xx (e.g. 409 on duplicate) instead of pre-checking and hoping.
+- Derived/denormalized data (counters, cached totals, status flags) must be written in the SAME trx as the source rows it derives from — or not stored at all (compute on read).
+
+**Isolation**
+- **WHEN a query needs a row lock — recognition test:** the flow (1) READS a row, (2) DECIDES/computes from what it read, (3) WRITES based on that decision, AND another actor can write the same row concurrently (two users, user + webhook, endpoint + cron). A stale read there = lost update or doubled side effect (double award, double charge, negative balance, over-booked slot). Pure display reads, immutable data, and writes that don't depend on a prior read need NO lock.
+- **Pick the mechanism, cheapest first:**
+  1. **ONE atomic UPDATE with the check in the WHERE** — `UPDATE bids SET status='AWARDED' WHERE id=? AND status='OPEN'` + check affected-rows; 0 rows = you lost the race → stop, do NOT run the side effects. Use when the decision is a simple predicate; no lock held across app code.
+  2. **Atomic arithmetic** for counters/balances — `SET count = count + 1`, `SET balance = balance - ? WHERE balance >= ?`; never read-add-write.
+  3. **`SELECT ... FOR UPDATE`** (knex `.forUpdate()`) only when the logic genuinely needs the read values (decision spans several fields/tables). It MUST run inside the SAME trx as the write — `.forUpdate()` outside a transaction (autocommit) releases the lock immediately and protects nothing. Lock rows in a consistent order across code paths to avoid deadlocks.
+- Concurrent create-if-absent → rely on the unique index (insert + handle duplicate-key, or upsert), never SELECT-then-INSERT.
+- Keep transactions SHORT: no external I/O, no big loops while holding locks — long trx = lock contention + deadlocks. On deadlock (`ER_LOCK_DEADLOCK`), retry the whole transaction; don't swallow it.
+
+**Durability**
+- Report success (HTTP 2xx, event emitted, job marked done) only AFTER the commit resolves — never before it, never fire-and-forget on the write itself.
+- Process memory is not durable: anything that must survive a restart/deploy (pending jobs, sync state, queues) lives in the DB, not in an in-memory map/cache (ties into the no-cache/stateless preference). If a post-commit side effect is critical, persist an outbox/flag row in the SAME trx and retry from it — a lost in-flight side effect must be recoverable from DB state alone.
+
+### Money & precision
+
+- Money is NEVER FLOAT/DOUBLE — new money columns are `DECIMAL(p,2)` (or integer cents). Float storage + float arithmetic silently drift (classic `0.1 + 0.2`), and drifted cents on bids/charges are a real-money bug.
+- No float arithmetic on money in app code either: compute in integer cents or a decimal lib, and round ONCE at the defined boundary (display/charge), not per step.
+- Existing float/double money columns (e.g. legacy `listings.price` double, `estimates.avg_price` float) are legacy debt — never copy the pattern into a new table; fix opportunistically when already migrating that table.
+
 ### Avoid OR in WHERE — it defeats indexes (full scan)
 
 `OR` across different columns (`orWhere` / `orWhereNull` chains) makes MySQL/Postgres usually **fall back to a full table scan** — the optimizer can't use a single index for a multi-column OR. On any query that scans a large table (backfill crons, list endpoints), this is a serious perf bug. Before writing `orWhere*`, restructure:
@@ -263,6 +331,32 @@ When adding/changing a migration or schema, or debugging null fields after a mig
 - **Collapse the OR into ONE sargable predicate.** Usually the OR exists to handle NULLs — kill the NULL: give the column a `NOT NULL DEFAULT <sentinel>` (via migration + backfill existing rows) so a single indexed comparison covers every case. *Precedent:* a HubSpot backfill filtered `whereNull(synced_at).orWhereNull(synced_version).orWhere(synced_version, "<", V)` → replaced with `where(synced_version, "<", V)` after making `synced_version` `NOT NULL DEFAULT 0` + adding an index. One indexed range scan instead of a 3-branch OR full scan.
 - **`OR` on the SAME column → use `IN (...)`** (`whereIn`) — that IS index-friendly. `OR` across DIFFERENT columns → split into a `UNION ALL` of per-column index-friendly queries, or precompute a derived/normalized column.
 - **Then make it sargable + indexed:** no function-wrapping the column (`WHERE COALESCE(col,0) < N` and `WHERE DATE(col)=...` also can't use the index) and add the covering index. A predicate that "works" but full-scans 60×/hour is still a perf bug — flag it and fix, don't leave it.
+- **Never build selection on column-vs-column comparisons (`a.updated_at > u.synced_at`)** — they are unsargable in EVERY arrangement, and an OR-chain of them across LEFT JOINs is the worst form. "No index can serve this anyway" / "the table is small" is NOT a license to ship it, and neither is flagging the scan in the PR — restructure instead. For change-detection / re-sync crons the simple sargable form is a **constant recency window**: `updated_at >= NOW() - INTERVAL <window>` with window > cron cadence, relying on the job being idempotent (re-processing an unchanged row = cheap noop). *Precedent:* hubspot backfill re-sync (listings-api #623) — I shipped `whereNull(synced_at).orWhere(users.updated_at > synced_at).orWhere(address.updated_at > synced_at).orWhere(max(profiles.updated_at) > synced_at)` over two joins and "flagged" it; the user rejected it as careless — the correct fix was `whereNull(synced_at) OR updated_at >= NOW() - INTERVAL 1 DAY`, no joins, event-sync covering the rest.
+
+## Reliability Rules — idempotency & bounded everything
+
+### Idempotency — every consumer tolerates at-least-once delivery
+
+- Webhooks, queue/event handlers, crons, and anything retried WILL run ≥2 times (redelivery, overlap, retry) — design for it: processing the same input twice must yield the same end state, never a doubled side effect (double charge, double award, duplicate row).
+- Mechanisms, cheapest first: natural-key dedupe/upsert (unique index + handle duplicate-key); status-transition guard — ONE atomic `UPDATE ... WHERE status='<expected>'`, check affected-rows, and only the winner runs the side effects; or a processed-marker (event id, envelope id) persisted in the SAME trx as the work.
+- Scheduled jobs additionally need an overlap guard (skip/lock while the previous run is still going) and max-tries — an unguarded failing job retries forever (precedent: soil cron reached tries=817k and took RC down, 2026-07-02).
+- Migrations/backfills are consumers too: write them idempotent (guard `hasColumn`/`hasTable`, upsert not insert) so a rerun is a noop, not a red deploy (precedent: `Duplicate column name` broke the RC migrator for days).
+
+### Everything bounded — timeouts, limits, retries with a max
+
+- Every outbound call (HTTP, vendor SDK, DB query) gets an explicit timeout, well under the CALLER's own deadline — an ALB health probe gives ~5s, so a dependency's default ~25s network timeout means the probe kills the task first (precedent: /health hung on firebase/pusher defaults → RC 504). Never trust SDK defaults — read or set them.
+- Every read that scans a growing table is bounded: list endpoints paginate, cron batches chunk (`LIMIT` + iterate), and `select` only the columns the loop uses — never drag blob/JSON columns along (precedent: blob-dragging crons OOM'd the shared t3.micro DB → RC outage).
+- Retries have a max attempt count + backoff (jitter when many callers fan out). An unbounded retry loop is a self-inflicted DoS on your own dependency.
+
+## KISS — simplest solution sized to the problem
+
+Default to the smallest change that fully solves the ACTUAL problem. "Simple" = least total complexity/risk over time — **not** least code, and not most complete/future-proof.
+
+- **Size the fix to severity, not to completeness.** Low-severity + local/dev-only + self-correcting (breaks visibly for whoever caused it, no prod/user impact) → lean path (fix the config/value where it lives + a one-line note). High-severity + prod + silent + user-facing → the guard that prevents recurrence IS the simple choice (letting it recur is the complex, risky one). Severity gates effort in BOTH directions.
+- **Don't pay a permanent tax for a rare problem.** Any lasting addition — code, DB column, flag, helper, abstraction, config key, standing manual step — must be justified by the problem's frequency × impact. Rare/one-off/self-healing → don't add it.
+- **YAGNI:** build for the need in front of you, never a speculative future one. You can add later; ripping out shipped machinery is expensive.
+- **The layer/scope call is the user's to co-own** — present the honest trade-off (severity, recurs?, self-corrects?, LoC/maintenance cost) and let them pick; don't ship the heavier option assuming "kills the class" always wins. Ties into [Fix at the Smartest Layer], [Lean Design], DRY.
+- **Applies to this rulebook too** — when adding a rule, dedupe + cross-link instead of restating, and prune the rule it supersedes. A bloated rulebook buries the load-bearing rules.
 
 ## Lean Design — Reuse What Exists Before Adding State or Logic
 
@@ -280,12 +374,23 @@ Precedent (do not repeat): to re-sync already-synced HubSpot contacts when a new
 - NEVER assume a third-party service is available without a health/readiness check
 - NEVER use `any` type on config or DTO objects that map to external data sources
 - When adding a new external integration, always add a corresponding config key with a clear staging-safe default
+- NEVER swallow an error silently — every `catch` must handle it for real, rethrow, or log with enough context to act on (+ Sentry for money/contract/sync flows). An empty or log-only-and-continue catch turns a failure into a silent data gap.
+- NEVER hold per-request/per-call state in module scope or static fields of a shared service — it leaks across concurrent requests (and across SSR renders; this was the root of the SSR `window is not defined` incident). Pass state as arguments or instantiate per request; process-global state is for true globals (config, connections) only.
 
 ## Testing Rules
 
 - Every new API endpoint MUST have at least one e2e test covering the happy path
 - Critical flows (auth, payments, irreversible money/contract actions) require both happy path and error path e2e tests
 - When fixing a bug caused by a staging/prod config mismatch, add a test that would have caught it
+
+### Test only what matters — no junk tests
+
+Tests are reserved for IMPORTANT behavior; a low-value test is worse than no test (it buries meaningful failures, slows every run, and must be maintained forever).
+
+- **Worth a test:** business-critical flows (auth, payments, signing, money/contract actions, data integrity), a new endpoint's happy path + the error paths with real blast radius, and a regression pin for a bug that actually occurred (the exact failure, not variations of it).
+- **Junk — do NOT write:** tests for trivial glue/plumbing or cosmetic behavior whose breakage is instantly visible in dev; asserting constants/enums/config values; re-testing that a library or the framework works; per-helper/per-DTO cases already covered by one route test; permutation matrices over a uniform code path; tests that mock so much they only assert the mocks.
+- **Default size: the smallest set that proves the contract** — typically 1 happy path + 1–2 failure/edge cases that matter. Each additional case needs a distinct failure mode with different blast radius as justification, not symmetry or completeness aesthetics.
+- Prefer ADDING a case to the existing test file for that route/area over creating a new file; prefer no test over a low-value one. When unsure whether a behavior is "important", it usually isn't — ask only if the flow touches money/legal/auth.
 
 ### HTTP-layer testing rule
 
@@ -321,6 +426,7 @@ After creating a PR/MR, keep ownership of the change until it is verified in the
 - **Slack: prepare, don't send.** Never post to Slack (or any external/team channel) on your own initiative — including after a PR, merge, finished task, or incident. Draft the message in chat for the user (English, short: PR link + a line or two of context; no headers, emoji walls, or long bullet lists) and send it via the send-slack skill only when they explicitly ask.
 - Monitor the PR/MR checks and review status after opening it.
 - If CI fails, inspect the failing job, fix the issue on the same branch, push the update, and continue monitoring.
+- **After a merge, confirm the CI/CD deploy run went GREEN — merge ≠ shipped, and this is on ME to check, not to wait for someone to report it.** A merge to the integration/release branch triggers a deploy pipeline that can fail at build, DB migrator, or the deploy step. Right after the PR merges — and before calling the work done — check the target branch's latest run (`gh run list --branch <rc|master> --limit 5`; drill in with `gh run view <id> --log-failed`). If it's red, the merged change did NOT reach the environment. **Treat a red deploy as mine to surface + fix even when the cause predates my PR:** a failing pipeline on a shared branch blocks EVERYONE's merges from shipping, and every later merge silently inherits the red run. Fix via a PR to the target (e.g. an idempotent-migration guard), flag it for urgent review, then watch the next run to green. (Precedent 2026-07-06: listings-api RC deploy had been red since ~07-03 at the migrator step — a non-idempotent migration threw `Duplicate column name 'hubspot_synced_at'` — so several merged PRs, two of mine included, never shipped to RC; it surfaced only when the user reported "deploy CICD lỗi". One `gh run list --branch rc` right after each merge would have caught it same-day. Ties into "Do not assume merge means fixed" below and the DB-migrations idempotency rules.)
 - After the PR/MR is merged, verify that the fix is actually present in the target branch and deployed environment:
   - For RC-targeted work, verify the behavior on RC after merge/deploy.
   - For production-targeted work, verify the behavior in production after release/deploy.

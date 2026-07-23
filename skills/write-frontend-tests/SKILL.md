@@ -1,6 +1,6 @@
 ---
 name: write-frontend-tests
-description: Use when writing frontend tests — Jest + React Testing Library for units (utils, hooks, components) and Cypress + Cucumber for e2e user flows. Where tests live, what to test, mocking the router, and the lint/type/test gates. React/Next.js reference.
+description: Use when writing frontend tests — a test-worthiness gate first (no 1:1 per-file test mirroring), then Jest + React Testing Library for components/hooks/utils that earn a test, and Cypress + Cucumber for e2e user flows. Where tests live, what to test, mocking the router, and the lint/type/test gates. React/Next.js reference.
 metadata:
   author: Ken Nguyễn <ntnpro@gmail.com>
 ---
@@ -14,10 +14,21 @@ Two layers; pick by what you're verifying. principle → **▸ Example (Jest/RTL
 | Unit / component | Jest + React Testing Library | utils, hooks, component behavior in isolation |
 | E2E | Cypress + Cucumber (BDD) | real user flows through the running app |
 
+## 0. Gate — does this deserve a test? (test behaviors, not files)
+A suite maps to **behaviors/contracts, not the file tree**. Never create a test file 1:1 with a
+source file by default — per-util mirror tests (`foo.utils.ts` → `foo.utils.test.ts`) bury real
+failures, slow every run, and are maintained forever.
+- **Direct util/hook test only when** the logic is genuinely complex AND matters (money, dates,
+  parsing, non-trivial business rules) or it pins a regression that actually occurred.
+- **Skip it when** a component/page/e2e test already exercises the behavior, or the code is trivial
+  glue (mapping, prop plumbing, re-exports) whose breakage is instantly visible in dev.
+- Prefer proving a util **through the component that uses it**; a separate util test duplicating
+  that coverage is junk. When in doubt → don't write it ("Test only what matters", `~/.claude/CLAUDE.md`).
+
 ## 1. Unit / component (Jest + RTL)
 - **Colocate** `*.test.ts(x)` next to source (or under `src/test/`). Test **behavior through the
   public surface**: render the component, query by role/text, fire user events, assert what the user
-  sees — not internal state. Pure utils/hooks are tested directly.
+  sees — not internal state. Pure utils/hooks that pass the §0 gate are tested directly.
 - **Mock the framework + externals only:**
   `jest.mock('next/router', () => ({ useRouter: () => ({ query: {} }) }))`, mock service classes;
   never mock the unit under test.
@@ -50,8 +61,9 @@ Lint/format = **Biome** (warning-first rollout, promoted to errors over time). A
 pre-push. Run `pnpm test` (unit) and the e2e suite before opening a PR.
 
 ## Verification
-- New behavior has a unit test (util/hook/component via RTL) and, for a user-facing flow, a Cypress
-  feature; tests assert observable behavior with specific values, not truthiness.
+- Important new behavior is covered at the outermost sensible layer (component via RTL; Cypress for
+  a user-facing flow); any direct util/hook test passes the §0 gate — no 1:1 mirror files, no
+  mock-only tests. Tests assert observable behavior with specific values, not truthiness.
 - `pnpm type-check`, `pnpm test`, and Biome all pass.
 
 ## Related

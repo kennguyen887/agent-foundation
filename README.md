@@ -78,7 +78,10 @@ written principle-first so it ports to any language.
 | `claude/plugins.json` | **Reference only** — third-party plugins/marketplaces + versions. Source is *not* vendored. |
 | `claude/bootstrap.sh` | Reproduce the Claude Code setup on a fresh machine. |
 
-`sync.mjs` — the exporter. Re-run to refresh the repo from your live config (currently sources `~/.claude`).
+`sync.mjs` — the exporter that produced this repo from a live `~/.claude`. It is **maintainer-local
+tooling and is not vendored here** (it's `.gitignore`d, since it reads a real machine's config); it's
+documented in **[Refreshing from your live config](#refreshing-from-your-live-config-syncmjs)** so you
+can see exactly what was excluded, sanitized, and redacted on the way out.
 
 ## Skills
 
@@ -152,7 +155,7 @@ stacks**, so they apply to any language/framework. 32 skills:
 
 ## Why plugins aren't vendored
 
-Most installed capabilities (the `gsd-*` skills/agents/hooks from get-shit-done, plus the `ecc` / `compound-engineering` / `warp` plugins) come from public marketplaces. Copying their source here would republish other people's code under this repo's license and go stale on every upstream update. Instead, `plugins/manifest.json` records exactly what to install and `bootstrap.sh` reinstalls it. Only first-party, authored content is vendored.
+Most installed capabilities (the `gsd-*` skills/agents/hooks from get-shit-done, plus the `ecc` / `compound-engineering` / `warp` plugins) come from public marketplaces. Copying their source here would republish other people's code under this repo's license and go stale on every upstream update. Instead, `claude/plugins.json` records exactly what to install and `claude/bootstrap.sh` reinstalls it. Only first-party, authored content is vendored.
 
 ## Community / marketplace skills (referenced, not vendored)
 
@@ -181,6 +184,11 @@ cp .env.example .env   # then fill in SENTRY_ACCESS_TOKEN, LINEAR_API_KEY, ...
 
 ## Refreshing from your live config (`sync.mjs`)
 
+> **`sync.mjs` is not included in this repo** — it's the maintainer's local exporter (`.gitignore`d,
+> because it reads a real `~/.claude`). Nothing here depends on it: `skills/`, `rules/`, `mcp/`, and
+> `claude/` are plain files you can use directly. It's documented below so the sanitization guarantees
+> behind the published files are auditable — and as a spec if you want to write your own exporter.
+
 ```bash
 node sync.mjs            # export + sanitize + secret-scan, then write the repo
 node sync.mjs --dry-run  # preview the plan, write nothing
@@ -200,4 +208,4 @@ node sync.mjs --check    # run the secret scan over existing output only
 
 ## License
 
-See `LICENSE`. Third-party plugins referenced in `plugins/manifest.json` retain their own licenses.
+See `LICENSE`. Third-party plugins referenced in `claude/plugins.json` retain their own licenses.

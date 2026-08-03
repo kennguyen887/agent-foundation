@@ -1,8 +1,8 @@
 ---
 name: write-service-code
-description: Use when writing code inside a feature — a handler, query, service, event, or integration test. Control flow, async (Promise.all), query performance (N+1, upsert, joins, indexes), events/SQS, logging, decimal/date libs. Language-agnostic with TS/NestJS examples.
+description: Use when writing OR refactoring/moving/porting code inside a feature — a handler, query, service, event, or integration test. Consolidating or extracting existing code counts (moved-verbatim code must still pass the checklist — precedent listings-api#719 where sequential awaits survived a controller→service move). Control flow, async (Promise.all), query performance (N+1, upsert, joins, indexes), events/SQS, logging, decimal/date libs. Language-agnostic with TS/NestJS examples.
 metadata:
-  last-updated: 2026-06-23
+  last-updated: 2026-07-30
   author: Ken Nguyễn <ntnpro@gmail.com>
 ---
 
@@ -49,6 +49,12 @@ const files = await Promise.all(media.map(async (m) => ({ name: m.name, data: aw
 ```
 A sequential `await` inside a `map`/loop for independent work is the anti-pattern — it serializes
 needlessly. ▸ *Other stacks:* `asyncio.gather`, goroutines + `errgroup`, `CompletableFuture.allOf`.
+
+Cheaper than parallelizing: **don't run what a branch discards.** If some flag/condition zeroes out
+or ignores a result, compute that condition FIRST and skip the calls entirely (precedent:
+listings-api#719 — an estimate engine ran 2 queries for non-tillable farms whose prices were then
+forced to 0). And "moved/ported verbatim" is not an exemption — code you relocate must pass this
+section even if its old home didn't.
 
 ### 3. Prefer `null` over `undefined`
 

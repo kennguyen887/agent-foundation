@@ -57,7 +57,7 @@
       }
     }
   },
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
-  "skipWorkflowUsageWarning": true,
-  "tui": "fullscreen"
+  "skipWorkflowUsageWarning": true
 }

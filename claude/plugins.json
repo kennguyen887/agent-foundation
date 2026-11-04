@@ -12,6 +12,10 @@
     {
       "name": "claude-code-warp",
       "source": "github"
+    },
+    {
+      "name": "archestack",
+      "source": "url"
     }
   ],
   "plugins": [

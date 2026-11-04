@@ -1,4 +1,10 @@
 {
+  "cleanupPeriodDays": 7,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "mcp__codegraph__codegraph_search",
@@ -8,15 +14,46 @@
       "mcp__codegraph__codegraph_impact",
       "mcp__codegraph__codegraph_node",
       "mcp__codegraph__codegraph_status"
-    ]
+    ],
+    "defaultMode": "bypassPermissions"
   },
+  "model": "opus",
   "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${HOME}/.claude/hooks/cleanup-session-worktree.sh\"",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${HOME}/.claude/hooks/token-guard.sh\" end",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "bash \"${HOME}/.claude/hooks/list-project-skills.sh\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${HOME}/.claude/hooks/token-guard.sh\" start",
+            "timeout": 5
           }
         ]
       }
@@ -28,6 +65,50 @@
           {
             "type": "command",
             "command": "bash \"${HOME}/.claude/hooks/validate-skill-schema.sh\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${HOME}/.claude/hooks/block-worktree.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${HOME}/.claude/hooks/helper-size-gate.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${HOME}/.claude/hooks/token-guard.sh\" stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${HOME}/.claude/hooks/token-guard.sh\" prompt",
             "timeout": 5
           }
         ]
@@ -55,9 +136,27 @@
         "source": "github",
         "repo": "warpdotdev/claude-code-warp"
       }
+    },
+    "archestack": {
+      "source": {
+        "source": "url",
+        "url": "https://archestack.com/marketplace.json"
+      }
+    }
+  },
+  "modelSettings": {
+    "claude-sonnet-5-5": {
+      "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
     }
   },
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
-  "skipWorkflowUsageWarning": true
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
+  "switchModelsOnFlag": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true
 }

@@ -11,7 +11,7 @@ conventions** — plus **copy-ready integration recipes** (Stripe / Rapyd / Cybe
 Singpass / Keycloak OIDC, Twilio, Docker / CI) with **real env keys + setup steps**, not generic advice.
 Every skill is **principle-first** (principle → example → other stacks), so it applies on any stack
 (NestJS, Spring, Django, Go, …), and loads **on demand** — only the one-line trigger is ever in context,
-so 32 skills cost ~nothing until one is actually used.
+so 41 skills cost ~nothing until one is actually used.
 
 This is meant to serve **any** AI coding agent, not one in particular. Portable capabilities live at the top level (plain-Markdown rules, portable skill folders, standard MCP JSON). Anything that only works with a specific agent lives in its own namespaced directory — today that's `claude/` (Claude Code). Other agents get sibling dirs (`cursor/`, `codex/`, …) as they're added. Adopt the whole thing or cherry-pick a piece.
 
@@ -87,7 +87,7 @@ can see exactly what was excluded, sanitized, and redacted on the way out.
 
 Every skill is a portable folder with a `SKILL.md`; only the one-line `description` is always loaded
 (the trigger), and the body loads on demand. All examples follow **principle → example → other
-stacks**, so they apply to any language/framework. 32 skills:
+stacks**, so they apply to any language/framework. 41 skills:
 
 ### Backend — structure & code
 
